@@ -19,6 +19,13 @@
 
 %privateheader{
 #include <gtk/gtk.h>
+#include <libedataserver/eds-version.h>
+#if EDS_CHECK_VERSION(2,91,0)
+#include <mail/e-mail-session.h>
+#else
+/* GOB2 doesn't support private members guarded with an #if */
+typedef EMailSession void;
+#endif
 %}
 
 %{
@@ -42,6 +49,7 @@ class MN:Evolution:Folder:Tree:Server from G:Object
 
   private GtkWidget *plug;
   private GtkWidget *tree;	/* plug's child, destroyed with it */
+  private EMailSession *session;
 
   property STRING uri
     set
@@ -62,7 +70,10 @@ class MN:Evolution:Folder:Tree:Server from G:Object
 
   constructor (self)
   {
-#if EDS_CHECK_VERSION(2,29,0)
+#if EDS_CHECK_VERSION(2,91,0)
+    selfp->session = e_mail_session_new();
+    selfp->tree = em_folder_tree_new(selfp->session);
+#elif EDS_CHECK_VERSION(2,29,0)
     selfp->tree = em_folder_tree_new();
 #else
     EMFolderTreeModel *model;
@@ -85,6 +96,10 @@ class MN:Evolution:Folder:Tree:Server from G:Object
 
   finalize (self)
   {
+#if EDS_CHECK_VERSION(2,91,0)
+    g_object_unref(selfp->session);
+    selfp->session = NULL;
+#endif
     g_signal_handlers_disconnect_by_func(selfp->plug, self_plug_destroy_h, self);
   }
 

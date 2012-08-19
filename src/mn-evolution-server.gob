@@ -36,7 +36,11 @@
 #include <mail/em-message-browser.h>
 #endif
 #include <mail/em-utils.h>
+#if EDS_CHECK_VERSION(2,91,0)
+#include <mail/e-mail-session.h>
+#else
 #include <mail/mail-session.h>
+#endif
 #include <mail/mail-tools.h>
 #include "mn-evolution.h"
 #include "mn-evolution-folder-tree-server.h"
