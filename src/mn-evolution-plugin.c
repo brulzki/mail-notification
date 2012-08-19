@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib-bindings.h>
 #include <camel/camel.h>
+#include <libedataserver/eds-version.h>
 #include <mail/em-event.h>
 #include <mail/mail-tools.h>
 #include "mn-evolution.h"
@@ -249,10 +250,15 @@ org_jylefort_mail_notification_message_reading (EPlugin *plugin,
 {
   if (evo_server)
     {
-      char *url;
+#if EDS_CHECK_VERSION(2,91,0)
+      const char *url = camel_folder_get_uri(message->folder);
+#else
+      char *url = mail_tools_folder_to_url(message->folder);
+#endif
 
-      url = mail_tools_folder_to_url(message->folder);
       mn_evolution_server_message_reading(evo_server, url);
+#if !EDS_CHECK_VERSION(2,91,0)
       g_free(url);
+#endif
     }
 }

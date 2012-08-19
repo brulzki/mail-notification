@@ -169,11 +169,13 @@ class MN:Evolution:Server from G:Object
 
     if (! folder)
       {
-	folder = mail_tool_uri_to_folder(uri, 0,
 #if EDS_CHECK_VERSION(2,91,0)
-                NULL,
+	static EMailSession * session = NULL;
+	if (! session)
+	  session = e_mail_session_new();
+
+	folder = e_mail_session_uri_to_folder_sync(session, uri, 0, NULL, NULL);
 #endif
-                NULL);
 	if (folder)
 	  self_cache_folder(uri, folder);
 	else
