@@ -173,7 +173,13 @@ class MN:Tooltips from G:Object
   {
     if (! selfp->window)
       {
+	GtkStyleContext *ctx;
+
 	selfp->window = gtk_window_new(GTK_WINDOW_POPUP);
+
+	ctx = gtk_widget_get_style_context(GTK_WIDGET(selfp->window));
+	gtk_style_context_add_class(ctx, "tooltip");
+
 	self_update_screen(self, TRUE);
 	gtk_widget_set_app_paintable(selfp->window, TRUE);
 	gtk_window_set_resizable(GTK_WINDOW(selfp->window), FALSE);
@@ -290,16 +296,12 @@ class MN:Tooltips from G:Object
     GtkRequisition req;
 
     gtk_widget_size_request(GTK_WIDGET(selfp), &req);
-    gtk_paint_flat_box(gtk_widget_get_style(selfp->window),
-		       cr,
-		       GTK_STATE_NORMAL,
-		       GTK_SHADOW_OUT,
-		       NULL,
-		       "tooltip",
-		       0,
-		       0,
-		       req.width,
-		       req.height);
+    gtk_render_background(gtk_widget_get_style_context(GTK_WIDGET(selfp->window)),
+                                                       cr,
+                                                       0,
+                                                       0,
+                                                       req.width,
+                                                       req.height);
 
     return FALSE;
   }

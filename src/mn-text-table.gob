@@ -139,7 +139,7 @@ class MN:Text:Table from Gtk:Widget
     int y;
 
     gtk_widget_get_allocation(widget, &allocation);
-    y = allocation.y;
+    y = 0;
 
     if (! gtk_widget_is_drawable(widget))
       return FALSE;
@@ -150,7 +150,7 @@ class MN:Text:Table from Gtk:Widget
       {
 	Row *row = g_ptr_array_index(selfp->rows, i);
 	int j;
-	int x = allocation.x;
+	int x = 0;
 	int column = 0;
 
 	MN_ARRAY_FOREACH(j, row->cells)
