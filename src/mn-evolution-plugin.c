@@ -241,7 +241,11 @@ org_jylefort_mail_notification_folder_changed (EPlugin *plugin,
 					       EMEventTargetFolder *folder)
 {
   if (evo_server)
+#if EDS_CHECK_VERSION(3,1,0)
+    mn_evolution_server_folder_changed(evo_server, e_mail_folder_uri_build(folder->store, folder->folder_name));
+#else
     mn_evolution_server_folder_changed(evo_server, folder->uri);
+#endif
 }
 
 void
