@@ -368,6 +368,10 @@ nautilus_cell_renderer_pixbuf_emblem_get_size (GtkCellRenderer *cell,
 	gint pixbuf_height = 0;
 	gint calc_width;
 	gint calc_height;
+	int xpad;
+	int ypad;
+	gfloat xalign;
+	gfloat yalign;
 
 	if (!cellpixbuf->pixbuf && cellinfo->stock_id)
 		nautilus_cell_renderer_pixbuf_emblem_create_stock_pixbuf (cellpixbuf, widget);
@@ -385,8 +389,11 @@ nautilus_cell_renderer_pixbuf_emblem_get_size (GtkCellRenderer *cell,
 		pixbuf_height = MAX (pixbuf_height, gdk_pixbuf_get_height (cellpixbuf->pixbuf_expander_closed));
 	}
 
-	calc_width  = (gint) cell->xpad * 2 + pixbuf_width;
-	calc_height = (gint) cell->ypad * 2 + pixbuf_height;
+	gtk_cell_renderer_get_padding(cell, &xpad, &ypad);
+	gtk_cell_renderer_get_alignment(cell, &xalign, &yalign);
+
+	calc_width = (gint) xpad * 2 + pixbuf_width;
+	calc_height = (gint) ypad * 2 + pixbuf_height;
 
 	if (x_offset) *x_offset = 0;
 	if (y_offset) *y_offset = 0;
@@ -394,14 +401,14 @@ nautilus_cell_renderer_pixbuf_emblem_get_size (GtkCellRenderer *cell,
 	if (cell_area && pixbuf_width > 0 && pixbuf_height > 0) {
 		if (x_offset) {
 			*x_offset = (((gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL) ?
-				1.0 - cell->xalign : cell->xalign) *
-				(cell_area->width - calc_width - 2 * cell->xpad));
-			*x_offset = MAX (*x_offset, 0) + cell->xpad;
+				1.0 - xalign : xalign) *
+				(cell_area->width - calc_width - 2 * xpad));
+			*x_offset = MAX (*x_offset, 0) + xpad;
 		}
 		if (y_offset) {
-			*y_offset = (cell->yalign *
-				(cell_area->height - calc_height - 2 * cell->ypad));
-			*y_offset = MAX (*y_offset, 0) + cell->ypad;
+			*y_offset = (yalign *
+				(cell_area->height - calc_height - 2 * ypad));
+			*y_offset = MAX (*y_offset, 0) + ypad;
 		}
 	}
 
@@ -429,13 +436,19 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 	GdkRectangle pix_emblem_rect;
 	GdkRectangle draw_rect;
 	gboolean stock_pixbuf = FALSE;
+	gboolean is_expander = FALSE;
+	gboolean is_expanded = FALSE;
+	int xpad;
+	int ypad;
+
+	g_object_get(cell, "is-expander", &is_expander, "is-expanded", &is_expanded, NULL);
 
 	pixbuf = cellpixbuf->pixbuf;
-	if (cell->is_expander) {
-		if (cell->is_expanded &&
+	if (is_expander) {
+		if (is_expanded &&
 		    cellpixbuf->pixbuf_expander_open != NULL) {
 			pixbuf = cellpixbuf->pixbuf_expander_open;
-		} else if (!cell->is_expanded &&
+		} else if (!is_expanded &&
 			   cellpixbuf->pixbuf_expander_closed != NULL) {
 			pixbuf = cellpixbuf->pixbuf_expander_closed;
 		}
@@ -456,15 +469,18 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 	if (stock_pixbuf)
 		pixbuf = cellpixbuf->pixbuf;
 
+	gtk_cell_renderer_get_padding(cell, &xpad, &ypad);
+
 	pix_rect.x += cell_area->x;
 	pix_rect.y += cell_area->y;
-	pix_rect.width  -= cell->xpad * 2;
-	pix_rect.height -= cell->ypad * 2;
+	pix_rect.width  -= xpad * 2;
+	pix_rect.height -= ypad * 2;
 
 	if (gdk_rectangle_intersect (cell_area, &pix_rect, &draw_rect) &&
 	    gdk_rectangle_intersect (expose_area, &draw_rect, &draw_rect)) {
+#if 0
 		gdk_draw_pixbuf (window,
-			widget->style->black_gc,
+			gtk_widget_get_style(widget)->black_gc,
 			pixbuf,
 			/* pixbuf 0, 0 is at pix_rect.x, pix_rect.y */
 			draw_rect.x - pix_rect.x,
@@ -475,6 +491,13 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 			draw_rect.height,
 			GDK_RGB_DITHER_NORMAL,
 			0, 0);
+#endif
+
+		cairo_t *cr = gdk_cairo_create (window);
+		cairo_move_to (cr, draw_rect.x - pix_rect.x, draw_rect.y - pix_rect.y);
+		gdk_cairo_set_source_pixbuf (cr, pixbuf, draw_rect.x, draw_rect.y);
+		cairo_paint (cr);
+		cairo_destroy (cr);
 	}
 
 	if (cellpixbuf->pixbuf_emblem) {
@@ -484,8 +507,9 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 		pix_emblem_rect.y = pix_rect.y + pix_rect.height - pix_emblem_rect.height;
 		if (gdk_rectangle_intersect (cell_area, &pix_emblem_rect, &draw_rect) &&
 		    gdk_rectangle_intersect (expose_area, &draw_rect, &draw_rect)) {
+#if 0
 			gdk_draw_pixbuf (window,
-				widget->style->black_gc,
+				gtk_widget_get_style(widget)->black_gc,
 				cellpixbuf->pixbuf_emblem,
 				/* pixbuf 0, 0 is at pix_emblem_rect.x, pix_emblem_rect.y */
 				draw_rect.x - pix_emblem_rect.x,
@@ -496,6 +520,13 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 				draw_rect.height,
 				GDK_RGB_DITHER_NORMAL,
 				0, 0);
+#endif
+
+			cairo_t *cr = gdk_cairo_create (window);
+			cairo_move_to (cr, draw_rect.x - pix_emblem_rect.x, draw_rect.y - pix_emblem_rect.y);
+			gdk_cairo_set_source_pixbuf (cr, cellpixbuf->pixbuf_emblem, draw_rect.x, draw_rect.y);
+			cairo_paint (cr);
+			cairo_destroy (cr);
 		}
 	}
 }

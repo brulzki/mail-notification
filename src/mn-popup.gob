@@ -74,7 +74,7 @@ class MN:Popup from Notify:Notification
      * on KDE environments. To work around this, add a little delay of at
      * most 2 seconds before showing a popup which is attached to the notification */
     do {
-        gdk_window_get_origin (gtk_widget_get_window (mn_shell->icon), &x, &y);
+        gdk_window_get_origin (gtk_widget_get_window (GTK_WIDGET(mn_shell->icon)), &x, &y);
 
         if (x != 0 || y != 0) {
             break;
