@@ -39,17 +39,16 @@ static void nautilus_cell_renderer_pixbuf_emblem_create_stock_pixbuf (NautilusCe
                                                           GtkWidget             *widget);
 static void nautilus_cell_renderer_pixbuf_emblem_get_size   (GtkCellRenderer            *cell,
                                                  GtkWidget                  *widget,
-                                                 GdkRectangle               *rectangle,
+                                                 const GdkRectangle         *rectangle,
                                                  gint                       *x_offset,
                                                  gint                       *y_offset,
                                                  gint                       *width,
                                                  gint                       *height);
 static void     nautilus_cell_renderer_pixbuf_emblem_render     (GtkCellRenderer            *cell,
-                                                          GdkWindow                  *window,
+                                                          cairo_t                    *cr,
                                                           GtkWidget                  *widget,
-                                                          GdkRectangle               *background_area,
-                                                          GdkRectangle               *cell_area,
-                                                          GdkRectangle               *expose_area,
+                                                          const GdkRectangle         *background_area,
+                                                          const GdkRectangle         *cell_area,
                                                           GtkCellRendererState                       flags);
 
 enum {
@@ -355,12 +354,12 @@ nautilus_cell_renderer_pixbuf_emblem_create_stock_pixbuf (NautilusCellRendererPi
 
 static void
 nautilus_cell_renderer_pixbuf_emblem_get_size (GtkCellRenderer *cell,
-				   GtkWidget       *widget,
-				   GdkRectangle    *cell_area,
-				   gint            *x_offset,
-				   gint            *y_offset,
-				   gint            *width,
-				   gint            *height)
+				   GtkWidget              *widget,
+				   const GdkRectangle     *cell_area,
+				   gint                   *x_offset,
+				   gint                   *y_offset,
+				   gint                   *width,
+				   gint                   *height)
 {
 	NautilusCellRendererPixbufEmblem *cellpixbuf = (NautilusCellRendererPixbufEmblem *) cell;
 	NautilusCellRendererPixbufEmblemInfo *cellinfo = g_object_get_data (G_OBJECT (cell), CELLINFO_KEY);
@@ -421,11 +420,10 @@ nautilus_cell_renderer_pixbuf_emblem_get_size (GtkCellRenderer *cell,
 
 static void
 nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
-                                 GdkWindow            *window,
+                                 cairo_t              *cr,
                                  GtkWidget            *widget,
-                                 GdkRectangle         *background_area,
-                                 GdkRectangle         *cell_area,
-                                 GdkRectangle         *expose_area,
+                                 const GdkRectangle   *background_area,
+                                 const GdkRectangle   *cell_area,
                                  GtkCellRendererState  flags)
 
 {
@@ -476,8 +474,7 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 	pix_rect.width  -= xpad * 2;
 	pix_rect.height -= ypad * 2;
 
-	if (gdk_rectangle_intersect (cell_area, &pix_rect, &draw_rect) &&
-	    gdk_rectangle_intersect (expose_area, &draw_rect, &draw_rect)) {
+	if (gdk_rectangle_intersect (cell_area, &pix_rect, &draw_rect)) {
 #if 0
 		gdk_draw_pixbuf (window,
 			gtk_widget_get_style(widget)->black_gc,
@@ -493,11 +490,9 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 			0, 0);
 #endif
 
-		cairo_t *cr = gdk_cairo_create (window);
 		cairo_move_to (cr, draw_rect.x - pix_rect.x, draw_rect.y - pix_rect.y);
 		gdk_cairo_set_source_pixbuf (cr, pixbuf, draw_rect.x, draw_rect.y);
 		cairo_paint (cr);
-		cairo_destroy (cr);
 	}
 
 	if (cellpixbuf->pixbuf_emblem) {
@@ -505,8 +500,7 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 		pix_emblem_rect.height = gdk_pixbuf_get_height (cellpixbuf->pixbuf_emblem);
 		pix_emblem_rect.x = pix_rect.x;
 		pix_emblem_rect.y = pix_rect.y + pix_rect.height - pix_emblem_rect.height;
-		if (gdk_rectangle_intersect (cell_area, &pix_emblem_rect, &draw_rect) &&
-		    gdk_rectangle_intersect (expose_area, &draw_rect, &draw_rect)) {
+		if (gdk_rectangle_intersect (cell_area, &pix_emblem_rect, &draw_rect)) {
 #if 0
 			gdk_draw_pixbuf (window,
 				gtk_widget_get_style(widget)->black_gc,
@@ -522,11 +516,9 @@ nautilus_cell_renderer_pixbuf_emblem_render (GtkCellRenderer      *cell,
 				0, 0);
 #endif
 
-			cairo_t *cr = gdk_cairo_create (window);
 			cairo_move_to (cr, draw_rect.x - pix_emblem_rect.x, draw_rect.y - pix_emblem_rect.y);
 			gdk_cairo_set_source_pixbuf (cr, cellpixbuf->pixbuf_emblem, draw_rect.x, draw_rect.y);
 			cairo_paint (cr);
-			cairo_destroy (cr);
 		}
 	}
 }
