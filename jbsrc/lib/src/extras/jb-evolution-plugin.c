@@ -41,7 +41,7 @@ jb_evolution_plugin_check (const char *minversion)
   if (! minversion)
     minversion = "2.12";
 
-  packages = g_strdup_printf("evolution-plugin-3.0 >= %s libgtkhtml-4.0 gtkhtml-editor-4.0", minversion);
+  packages = g_strdup_printf("evolution-plugin-3.0 >= %s evolution-shell-3.0", minversion);
   result = jb_check_packages("Evolution", "evolution-plugin", packages);
   g_free(packages);
 

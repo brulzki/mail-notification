@@ -28,6 +28,7 @@
 #include <libedataserver/eds-version.h>
 #include <mail/em-event.h>
 #include <mail/mail-tools.h>
+#include <mail/e-mail-folder-utils.h>
 #include "mn-evolution.h"
 #include "mn-evolution-server.h"
 #include "mn-evolution-plugin.h"
@@ -254,14 +255,16 @@ org_jylefort_mail_notification_message_reading (EPlugin *plugin,
 {
   if (evo_server)
     {
-#if EDS_CHECK_VERSION(2,91,0)
+#if EDS_CHECK_VERSION(3,1,0)
+      char *url = e_mail_folder_uri_from_folder(message->folder);
+#elif EDS_CHECK_VERSION(2,91,0)
       const char *url = camel_folder_get_uri(message->folder);
 #else
       char *url = mail_tools_folder_to_url(message->folder);
 #endif
 
       mn_evolution_server_message_reading(evo_server, url);
-#if !EDS_CHECK_VERSION(2,91,0)
+#if EDS_CHECK_VERSION(3,1,0) || !EDS_CHECK_VERSION(2,91,0)
       g_free(url);
 #endif
     }
