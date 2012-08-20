@@ -695,8 +695,8 @@ jb_package_add_resources (void)
   group = jb_group_new("ui");
 
   jb_group_add_data_files(group,
-			  "mailbox-properties-dialog.glade", "$pkgdatadir",
-			  "properties-dialog.glade", "$pkgdatadir",
+			  "mailbox-properties-dialog.ui", "$pkgdatadir",
+			  "properties-dialog.ui", "$pkgdatadir",
 			  NULL);
 
   jb_group_add(group);
