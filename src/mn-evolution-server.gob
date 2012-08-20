@@ -305,7 +305,12 @@ class MN:Evolution:Server from G:Object
     folder = self_lookup_folder(folder_uri, err);
     if (folder)
       {
+#if EDS_CHECK_VERSION(3,1,0)
+	*ret = g_strdup(camel_folder_get_display_name(folder));
+#else
 	*ret = g_strdup(camel_folder_get_name(folder));
+#endif
+
 #if EDS_CHECK_VERSION(2,31,0)
         g_object_unref(folder);
 #else
@@ -332,17 +337,21 @@ class MN:Evolution:Server from G:Object
     if (folder)
       {
 #if EDS_CHECK_VERSION(2,29,0)
-        EShell *shell;
-        EShellBackend *shell_backend;
-        GtkWidget *browser;
+	EShell *shell;
+	EShellBackend *shell_backend;
+	GtkWidget *browser;
 
-        shell = e_shell_get_default ();
-        shell_backend = e_shell_get_backend_by_name (shell, "mail");
+	shell = e_shell_get_default ();
+	shell_backend = e_shell_get_backend_by_name (shell, "mail");
 
-        browser = e_mail_browser_new (shell_backend);
-        e_mail_reader_set_folder (E_MAIL_READER (browser), folder, folder_uri);
-        e_mail_reader_set_message (E_MAIL_READER (browser), message_uid);
-        gtk_widget_show (browser);
+	browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend));
+#if EDS_CHECK_VERSION(3,1,0)
+	e_mail_reader_set_folder (E_MAIL_READER (browser), folder);
+#else
+	e_mail_reader_set_folder (E_MAIL_READER (browser), folder, folder_uri);
+#endif
+	e_mail_reader_set_message (E_MAIL_READER (browser), message_uid);
+	gtk_widget_show (browser);
 #else
 	GtkWidget *browser;
 
@@ -357,7 +366,7 @@ class MN:Evolution:Server from G:Object
 #endif
 
 #if EDS_CHECK_VERSION(2,31,0)
-        g_object_unref(folder);
+	g_object_unref(folder);
 #else
 	camel_object_unref(folder);
 #endif
