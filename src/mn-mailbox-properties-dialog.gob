@@ -165,7 +165,7 @@ class MN:Mailbox:Properties:Dialog from MN:Dialog
 				  "delay_scale", &selfp->delay_scale,
 				  NULL);
 
-    gtk_window_set_resizable(GTK_WINDOW(self), FALSE);
+    gtk_window_set_resizable(GTK_WINDOW(self), TRUE);
 
     if (selfp->dialog_parent)
       gtk_window_set_transient_for(GTK_WINDOW(self), selfp->dialog_parent);
