@@ -89,12 +89,14 @@ class MN:Evolution:Folder:Tree:Server from G:Object
     EShell *shell = e_shell_get_default();
     EShellBackend *shell_backend = e_shell_get_backend_by_name(shell, "mail");
 #if EDS_CHECK_VERSION(3,5,1)
-    GtkWidget *browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend), NULL, NULL, EM_FORMAT_WRITE_MODE_NORMAL);
+    GtkWidget *browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend), NULL, NULL, E_MAIL_FORMATTER_MODE_NORMAL);
 #else
     GtkWidget *browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend));
 #endif
     EAlertSink *alert_sink = e_mail_reader_get_alert_sink(E_MAIL_READER(browser));
-#if EDS_CHECK_VERSION(3,4,0)
+#if EDS_CHECK_VERSION(3,5,3)
+    selfp->tree = em_folder_tree_new(e_mail_session_new(e_shell_get_registry (shell)), alert_sink);
+#elif EDS_CHECK_VERSION(3,4,0)
     selfp->tree = em_folder_tree_new(e_mail_session_new(), alert_sink);
 #else
     selfp->tree = em_folder_tree_new(E_MAIL_BACKEND(shell_backend), alert_sink);

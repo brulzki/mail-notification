@@ -358,7 +358,7 @@ class MN:Evolution:Server from G:Object
 	shell_backend = e_shell_get_backend_by_name (shell, "mail");
 
 #if EDS_CHECK_VERSION(3,5,1)
-	browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend), NULL, NULL, EM_FORMAT_WRITE_MODE_NORMAL);
+	browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend), NULL, NULL, E_MAIL_FORMATTER_MODE_NORMAL);
 #else
 	browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend));
 #endif
