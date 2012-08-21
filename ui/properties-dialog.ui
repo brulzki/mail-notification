@@ -36,6 +36,7 @@
                       <object class="GtkVBox" id="vbox22">
                         <property name="visible">True</property>
                         <property name="spacing">6</property>
+                        <property name="expand">False</property>
                         <child>
                           <object class="GtkLabel" id="label36">
                             <property name="visible">True</property>
@@ -397,6 +398,7 @@
                               <object class="GtkVBox" id="vbox2">
                                 <property name="visible">True</property>
                                 <property name="spacing">6</property>
+                                <property name="expand">False</property>
                                 <child>
                                   <object class="GtkRadioButton" id="popups_position_attached_radio">
                                     <property name="visible">True</property>

@@ -95,7 +95,7 @@ class MN:Mailbox:Properties from G:Object (abstract)
     GSList *l;
 
     MN_LIST_FOREACH(l, selfp->general_sections)
-      gtk_box_pack_start(GTK_BOX(MN_MAILBOX_PROPERTIES_DIALOG(properties->dialog)->general_vbox), l->data, FALSE, FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(MN_MAILBOX_PROPERTIES_DIALOG(properties->dialog)->general_vbox), l->data, TRUE, TRUE, 0);
   }
 
   override (MN:Mailbox:Properties) void
