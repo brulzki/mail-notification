@@ -86,7 +86,15 @@ class MN:Evolution:Folder:Tree:Server from G:Object
   constructor (self)
   {
 #if EDS_CHECK_VERSION(3,1,0)
-    selfp->tree = em_folder_tree_new(NULL, NULL);
+    EShell *shell = e_shell_get_default();
+    EShellBackend *shell_backend = e_shell_get_backend_by_name(shell, "mail");
+    GtkWidget *browser = e_mail_browser_new (E_MAIL_BACKEND(shell_backend));
+    EAlertSink *alert_sink = e_mail_reader_get_alert_sink(E_MAIL_READER(browser));
+#if EDS_CHECK_VERSION(3,4,0)
+    selfp->tree = em_folder_tree_new(e_mail_session_new(), alert_sink);
+#else
+    selfp->tree = em_folder_tree_new(E_MAIL_BACKEND(shell_backend), alert_sink);
+#endif
 #elif EDS_CHECK_VERSION(2,91,0)
     selfp->session = e_mail_session_new();
     selfp->tree = em_folder_tree_new(selfp->session);
@@ -119,8 +127,11 @@ class MN:Evolution:Folder:Tree:Server from G:Object
   finalize (self)
   {
 #if EDS_CHECK_VERSION(2,91,0)
-    g_object_unref(selfp->session);
-    selfp->session = NULL;
+    if (selfp->session)
+      {
+        g_object_unref(selfp->session);
+        selfp->session = NULL;
+      }
 #endif
     g_signal_handlers_disconnect_by_func(selfp->plug, self_plug_destroy_h, self);
   }
