@@ -51,10 +51,12 @@ class MN:Popup from Notify:Notification
 		 "icon-name", "stock_mail",
 		 NULL);
 
+#if !NOTIFY_CHECK_VERSION(0,7,0)
     if (mn_conf_get_enum_value(MN_TYPE_POPUP_POSITION, MN_CONF_POPUPS_POSITION) == MN_POPUP_POSITION_ATTACHED) {
       self_wait_for_icon_to_become_ready(self);
       g_object_set(self, "attach-widget", mn_shell->icon, NULL);
     }
+#endif
 
     g_string_free(body, TRUE);
 
