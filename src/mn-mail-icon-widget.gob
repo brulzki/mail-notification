@@ -183,6 +183,9 @@ class MN:Mail:Icon:Widget from Gtk:Widget
 	    GdkPixbuf *pixbuf;
 
 	    pixbuf = self_render_icon(self);
+	    gdk_cairo_set_source_pixbuf(cr, pixbuf, image_area.x, image_area.y);
+	    cairo_move_to(cr, image_area.x - x, image_area.y - y);
+	    cairo_paint(cr);
 
 #if 0
 	    gdk_draw_pixbuf(widget->window,

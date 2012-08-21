@@ -300,7 +300,7 @@ class MN:Tooltips from G:Object
   {
     GtkRequisition req;
 
-    gtk_widget_size_request(GTK_WIDGET(selfp), &req);
+    gtk_widget_size_request(GTK_WIDGET(selfp->window), &req);
     gtk_render_background(gtk_widget_get_style_context(GTK_WIDGET(selfp->window)),
                                                        cr,
                                                        0,
