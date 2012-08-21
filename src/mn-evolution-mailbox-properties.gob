@@ -66,12 +66,20 @@ class MN:Evolution:Mailbox:Properties from MN:Mailbox:Properties
   {
     MNMailboxProperties *properties = MN_MAILBOX_PROPERTIES(self);
     GtkWidget *vbox;
+    GtkWidget *scrolled_window;
 
     /* translators: header capitalization */
     vbox = mn_mailbox_properties_add_general_section(properties, _("Folder"));
 
     selfp->tree = mn_evolution_folder_tree_client_new();
-    gtk_box_pack_start(GTK_BOX(vbox), selfp->tree, TRUE, TRUE, 0);
+
+    scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), selfp->tree);
+
+    gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
+
+    gtk_widget_show(scrolled_window);
     gtk_widget_show(selfp->tree);
 
     g_object_connect(selfp->tree,
@@ -91,6 +99,8 @@ class MN:Evolution:Mailbox:Properties from MN:Mailbox:Properties
     client = mn_evolution_client_get();
     if (client->proxy)
       org_gnome_MailNotification_Evolution_get_folder_name(client->proxy, MN_EVOLUTION_FOLDER_TREE_CLIENT(selfp->tree)->selected_uri, &name, NULL);
+
+    g_return_if_fail(name != NULL);
 
     g_free(selfp->name);
     selfp->name = name;
