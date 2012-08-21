@@ -20,11 +20,15 @@
 %privateheader{
 #include <gtk/gtk.h>
 #include <libedataserver/eds-version.h>
-#if EDS_CHECK_VERSION(2,91,0)
-#include <mail/e-mail-session.h>
+#if EDS_CHECK_VERSION(3,3,5)
+  #include <libemail-engine/e-mail-session.h>
 #else
-/* GOB2 doesn't support private members guarded with an #if */
-typedef EMailSession void;
+  #if EDS_CHECK_VERSION(2,91,0)
+    #include <mail/e-mail-session.h>
+  #else
+    /* GOB2 doesn't support private members guarded with an #if */
+    typedef EMailSession void;
+  #endif
 #endif
 %}
 
@@ -33,13 +37,17 @@ typedef EMailSession void;
 #include <gtk/gtkx.h>
 #include <libedataserver/eds-version.h>
 #if !EDS_CHECK_VERSION(2,29,0)
-#include <mail/mail-component.h>
+  #include <mail/mail-component.h>
 #endif
 #if EDS_CHECK_VERSION(3,1,0)
-#include <mail/e-mail-folder-utils.h>
-#include <mail/e-mail-browser.h>
-#include <mail/e-mail-reader.h>
-#include <shell/e-shell.h>
+  #if EDS_CHECK_VERSION(3,3,5)
+    #include <libemail-engine/e-mail-folder-utils.h>
+  #else
+    #include <mail/e-mail-folder-utils.h>
+  #endif
+  #include <mail/e-mail-browser.h>
+  #include <mail/e-mail-reader.h>
+  #include <shell/e-shell.h>
 #endif
 #include <mail/em-folder-tree.h>
 #include "mn-evolution-plugin.h"
@@ -145,7 +153,13 @@ class MN:Evolution:Folder:Tree:Server from G:Object
 		      gpointer user_data)
   {
     Self *self = user_data;
+    char *uri;
+
+    if (!folder_name) return;
+
+    uri = e_mail_folder_uri_build(store, folder_name);
     self_folder_selected(self, uri);
+    g_free(uri);
   }
 
   private void

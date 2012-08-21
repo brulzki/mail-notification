@@ -28,20 +28,25 @@
 #include <libedataserver/eds-version.h>
 #include <camel/camel.h>
 #if EDS_CHECK_VERSION(2,29,0)
-#include <shell/e-shell.h>
-#include <mail/e-mail-browser.h>
+  #include <shell/e-shell.h>
+  #include <mail/e-mail-browser.h>
 #else
-#include <mail/em-folder-view.h>
-#include <mail/em-format.h>
-#include <mail/em-message-browser.h>
+  #include <mail/em-folder-view.h>
+  #include <mail/em-format.h>
+  #include <mail/em-message-browser.h>
 #endif
 #include <mail/em-utils.h>
-#if EDS_CHECK_VERSION(2,91,0)
-#include <mail/e-mail-session.h>
+#if EDS_CHECK_VERSION(3,3,5)
+  #include <libemail-engine/e-mail-session.h>
+  #include <libemail-engine/mail-tools.h>
 #else
-#include <mail/mail-session.h>
+  #include <mail/mail-tools.h>
+  #if EDS_CHECK_VERSION(2,91,0)
+    #include <mail/e-mail-session.h>
+  #else
+    #include <mail/mail-session.h>
+  #endif
 #endif
-#include <mail/mail-tools.h>
 #include "mn-evolution.h"
 #include "mn-evolution-folder-tree-server.h"
 #include "mn-evolution-plugin.h"

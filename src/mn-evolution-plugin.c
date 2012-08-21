@@ -27,8 +27,13 @@
 #include <camel/camel.h>
 #include <libedataserver/eds-version.h>
 #include <mail/em-event.h>
+#if EDS_CHECK_VERSION(3,3,5)
+#include <libemail-engine/e-mail-folder-utils.h>
+#include <libemail-engine/mail-tools.h>
+#else
 #include <mail/mail-tools.h>
 #include <mail/e-mail-folder-utils.h>
+#endif
 #include "mn-evolution.h"
 #include "mn-evolution-server.h"
 #include "mn-evolution-plugin.h"

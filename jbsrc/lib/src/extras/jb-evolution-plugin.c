@@ -63,5 +63,5 @@ jb_evolution_plugin_check (const char *minversion)
       g_free(plugindir);
     }
 
-  return TRUE;
+  return jb_check_packages("Evolution", "libemail-engine", "libemail-engine");
 }

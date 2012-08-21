@@ -636,6 +636,7 @@ jb_package_add_resources (void)
       jb_group_add_data_file(group, "org-jylefort-mail-notification.eplug", "$evolution-plugin-dir");
 
       jb_compile_options_add_cflags(object->compile_options, "$evolution-plugin-cflags");
+      jb_compile_options_add_cflags(object->compile_options, "$libemail-engine-cflags");
 
       jb_group_add_dbus_interface(group,
 				  "org.freedesktop.DBus.Properties",
@@ -663,6 +664,7 @@ jb_package_add_resources (void)
 
       jb_compile_options_add_package(plugin->compile_options, "gettext");
       jb_compile_options_add_package(plugin->compile_options, "evolution-plugin");
+      jb_compile_options_add_package(plugin->compile_options, "libemail-engine");
       jb_compile_options_add_package(plugin->compile_options, "dbus");
 
       jb_group_add_dbus_interface(group,
