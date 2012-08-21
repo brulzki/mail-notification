@@ -172,7 +172,15 @@ class MN:Evolution:Server from G:Object
 #if EDS_CHECK_VERSION(2,91,0)
 	static EMailSession * session = NULL;
 	if (! session)
-	  session = e_mail_session_new();
+	  {
+#if EDS_CHECK_VERSION(3,1,0)
+	    EShell *shell = e_shell_get_default();
+	    EShellBackend *shell_backend = e_shell_get_backend_by_name(shell, "mail");
+	    session = E_MAIL_SESSION(e_mail_backend_get_session(E_MAIL_BACKEND(shell_backend)));
+#else
+	    session = e_mail_session_new();
+#endif
+          }
 
 	folder = e_mail_session_uri_to_folder_sync(session, uri, 0, NULL, NULL);
 #endif

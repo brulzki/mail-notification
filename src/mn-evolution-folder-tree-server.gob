@@ -35,6 +35,12 @@ typedef EMailSession void;
 #if !EDS_CHECK_VERSION(2,29,0)
 #include <mail/mail-component.h>
 #endif
+#if EDS_CHECK_VERSION(3,1,0)
+#include <mail/e-mail-folder-utils.h>
+#include <mail/e-mail-browser.h>
+#include <mail/e-mail-reader.h>
+#include <shell/e-shell.h>
+#endif
 #include <mail/em-folder-tree.h>
 #include "mn-evolution-plugin.h"
 #include "mn-evolution.h"
@@ -92,8 +98,13 @@ class MN:Evolution:Folder:Tree:Server from G:Object
     g_signal_connect(selfp->plug, "destroy", G_CALLBACK(self_plug_destroy_h), self);
 
     g_object_connect(selfp->tree,
+#if EDS_CHECK_VERSION(3,1,0)
+		     "signal::folder-selected", self_selected_evo31_h, self,
+		     "signal::folder-activated", self_activated_evo31_h, self,
+#else
 		     "signal::folder-selected", self_selected_h, self,
 		     "signal::folder-activated", self_activated_h, self,
+#endif
 		     NULL);
   }
 
@@ -127,6 +138,17 @@ class MN:Evolution:Folder:Tree:Server from G:Object
   }
 
   private void
+    selected_evo31_h (EMFolderTree *tree,
+		      CamelStore *store,
+		      const char *folder_name,
+		      guint32 flags,
+		      gpointer user_data)
+  {
+    Self *self = user_data;
+    self_folder_selected(self, uri);
+  }
+
+  private void
     selected_h (EMFolderTree *tree,
 		const char *full_name,
 		const char *uri,
@@ -135,6 +157,16 @@ class MN:Evolution:Folder:Tree:Server from G:Object
   {
     Self *self = user_data;
     self_folder_selected(self, uri);
+  }
+
+  private void
+    activated_evo31_h (EMFolderTree *tree,
+		       CamelStore * store,
+		       const char * folder_name,
+		       gpointer user_data)
+  {
+    Self *self = user_data;
+    self_folder_activated(self);
   }
 
   private void
