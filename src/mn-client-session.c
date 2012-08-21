@@ -679,7 +679,7 @@ verify_ssl_certificate (MNClientSession *session)
       else
 	{
 	  unsigned char md5sum[16];
-	  unsigned char fingerprint[40];
+	  unsigned char fingerprint[49];
 	  int md5len;
 	  int i;
 	  unsigned char *f;
@@ -687,6 +687,7 @@ verify_ssl_certificate (MNClientSession *session)
 	  /* calculate the MD5 hash of the raw certificate */
 	  md5len = sizeof(md5sum);
 	  X509_digest(cert, EVP_md5(), md5sum, &md5len);
+	  memset(fingerprint, 0, sizeof(fingerprint));
 	  for (i = 0, f = fingerprint; i < 16; i++, f += 3)
 	    sprintf(f, "%.2x%c", md5sum[i], i != 15 ? ':' : '\0');
 
