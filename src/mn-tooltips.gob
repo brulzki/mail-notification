@@ -359,7 +359,7 @@ class MN:Tooltips from G:Object
     w = requisition.width;
     h = requisition.height;
 
-    gtk_widget_get_allocation(selfp->window, &allocation);
+    gtk_widget_get_allocation(widget, &allocation);
     gdk_window_get_origin(gtk_widget_get_window(widget), &x, &y);
     if (! gtk_widget_get_has_window(widget))
       {
