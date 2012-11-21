@@ -272,11 +272,26 @@ class MN:Evolution:Server from G:Object
     folder = self_lookup_folder(folder_uri, err);
     if (folder)
       {
-	GPtrArray *summary;
-	int i;
+        int i;
+#if EDS_CHECK_VERSION(3,6,0)
+        GPtrArray *uids;
+#else
+        GPtrArray *summary;
+#endif
 
-	*ret = g_ptr_array_new();
+        *ret = g_ptr_array_new();
 
+#if EDS_CHECK_VERSION(3,6,0)
+        uids = camel_folder_search_by_expression (folder, "(match-all (not (system-flag \"seen\")))", NULL, err);
+        if (uids) {
+          for (i = 0; i < uids->len; i++) {
+            CamelMessageInfo *info = camel_folder_get_message_info(folder, uids->pdata[i]);
+            if (info)
+              g_ptr_array_add(*ret, self_camel_message_info_to_dbus_struct(info));
+          }
+          camel_folder_search_free (folder, uids);
+        }
+#else
 	summary = camel_folder_get_summary(folder);
 
 	for (i = 0; i < summary->len; i++)
@@ -293,6 +308,8 @@ class MN:Evolution:Server from G:Object
 	  }
 
 	camel_folder_free_summary(folder, summary);
+#endif
+
 #if EDS_CHECK_VERSION(2,31,0)
         g_object_unref(folder);
 #else
