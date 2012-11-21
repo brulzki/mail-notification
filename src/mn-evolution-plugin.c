@@ -247,7 +247,11 @@ org_jylefort_mail_notification_folder_changed (EPlugin *plugin,
 					       EMEventTargetFolder *folder)
 {
   if (evo_server)
-#if EDS_CHECK_VERSION(3,1,0)
+#if EDS_CHECK_VERSION(3,5,0)
+    /* In evolution 3.5/3.6 the folder_name variable doesn't contain the folder name but
+     * instead it contains the full uri: GNOME BZ #688429, evolution commit 3449e5fc */
+    mn_evolution_server_folder_changed(evo_server, folder->folder_name);
+#elif EDS_CHECK_VERSION(3,1,0)
     mn_evolution_server_folder_changed(evo_server, e_mail_folder_uri_build(folder->store, folder->folder_name));
 #else
     mn_evolution_server_folder_changed(evo_server, folder->uri);
