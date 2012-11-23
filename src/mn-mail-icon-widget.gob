@@ -42,22 +42,18 @@ class MN:Mail:Icon:Widget from Gtk:Widget
     set
     {
       gboolean blinking = g_value_get_boolean(VAL);
-      if (blinking != selfp->blinking)
-	{
-	  selfp->blinking = blinking;
-	  if (blinking)
-	    {
-	      g_assert(selfp->blink_timeout_id == 0);
-	      selfp->blink_timeout_id = gdk_threads_add_timeout(500, self_blink_timeout_cb, self);
-	    }
-	  else
-	    {
-	      g_assert(selfp->blink_timeout_id != 0);
-	      mn_source_clear(&selfp->blink_timeout_id);
-	      selfp->is_on = TRUE;
-	      gtk_widget_queue_draw(GTK_WIDGET(self));
-	    }
-	}
+      if (blinking != selfp->blinking) {
+        selfp->blinking = blinking;
+        if (blinking) {
+          g_assert(selfp->blink_timeout_id == 0);
+          selfp->blink_timeout_id = gdk_threads_add_timeout(500, self_blink_timeout_cb, self);
+        } else {
+          g_assert(selfp->blink_timeout_id != 0);
+          mn_source_clear(&selfp->blink_timeout_id);
+          selfp->is_on = TRUE;
+          gtk_widget_queue_draw(GTK_WIDGET(self));
+        }
+      }
     }
     get
     {
@@ -71,12 +67,11 @@ class MN:Mail:Icon:Widget from Gtk:Widget
     set
     {
       int count = g_value_get_int(VAL);
-      if (count != selfp->count)
-	{
-	  selfp->count = count;
-	  self_invalidate_count_layout(self);
-	  gtk_widget_queue_draw(GTK_WIDGET(self));
-	}
+      if (count != selfp->count) {
+        selfp->count = count;
+        self_invalidate_count_layout(self);
+        gtk_widget_queue_draw(GTK_WIDGET(self));
+      }
     }
     get
     {
@@ -96,10 +91,10 @@ class MN:Mail:Icon:Widget from Gtk:Widget
     gtk_widget_set_name(GTK_WIDGET(self), "mn-mail-icon");
 
     g_object_connect(self,
-		     "swapped-signal::size-allocate", self_invalidate_count_layout, self,
-		     "swapped-signal::style-set", self_context_changed, self,
-		     "swapped-signal::direction-changed", self_context_changed, self,
-		     NULL);
+                     "swapped-signal::size-allocate", self_invalidate_count_layout, self,
+                     "swapped-signal::style-set", self_context_changed, self,
+                     "swapped-signal::direction-changed", self_context_changed, self,
+                     NULL);
   }
 
   dispose (self)
@@ -115,18 +110,15 @@ class MN:Mail:Icon:Widget from Gtk:Widget
 
     pixbuf = self_render_icon(self);
 
-    if (pixbuf)
-      {
-	requisition->width = gdk_pixbuf_get_width(pixbuf);
-	requisition->height = gdk_pixbuf_get_height(pixbuf);
+    if (pixbuf) {
+      requisition->width = gdk_pixbuf_get_width(pixbuf);
+      requisition->height = gdk_pixbuf_get_height(pixbuf);
 
-	g_object_unref(pixbuf);
-      }
-    else
-      {
-	requisition->width = 0;
-	requisition->height = 0;
-      }
+      g_object_unref(pixbuf);
+    } else {
+      requisition->width = 0;
+      requisition->height = 0;
+    }
   }
 
   override (Gtk:Widget) void
@@ -274,9 +266,9 @@ class MN:Mail:Icon:Widget from Gtk:Widget
   {
     if (selfp->stock_id)
       return gtk_widget_render_icon(GTK_WIDGET(self),
-				    selfp->stock_id,
-				    selfp->icon_size,
-				    NULL);
+                                    selfp->stock_id,
+                                    selfp->icon_size,
+                                    NULL);
     else
       return NULL;
   }
@@ -284,21 +276,19 @@ class MN:Mail:Icon:Widget from Gtk:Widget
   private void
     context_changed (self)
   {
-    if (selfp->count_layout)
-      {
-	pango_layout_context_changed(selfp->count_layout);
-	gtk_widget_queue_draw(GTK_WIDGET(self));
-      }
+    if (selfp->count_layout) {
+      pango_layout_context_changed(selfp->count_layout);
+      gtk_widget_queue_draw(GTK_WIDGET(self));
+    }
   }
 
   private void
     invalidate_count_layout (self)
   {
-    if (selfp->count_layout)
-      {
-	g_object_unref(selfp->count_layout);
-	selfp->count_layout = NULL;
-      }
+    if (selfp->count_layout) {
+      g_object_unref(selfp->count_layout);
+      selfp->count_layout = NULL;
+    }
   }
 
   private gboolean
