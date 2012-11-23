@@ -65,46 +65,40 @@ mn_stock_init (void)
   gtk_icon_factory_add_default(factory);
   icon_theme = gtk_icon_theme_get_default();
 
-  for (i = 0; i < G_N_ELEMENTS(icons); i++)
-    {
-      GtkIconSet *icon_set;
+  for (i = 0; i < G_N_ELEMENTS(icons); i++) {
+    GtkIconSet *icon_set;
 
-      if (icons[i].filename)
-	{
-	  GdkPixbuf *pixbuf;
+    if (icons[i].filename) {
+      GdkPixbuf *pixbuf;
 
-	  pixbuf = mn_pixbuf_new(icons[i].filename);
-	  icon_set = gtk_icon_set_new_from_pixbuf(pixbuf);
-	  g_object_unref(pixbuf);
-	}
-      else if (icons[i].icon_name)
-	{
-	  GtkIconSource *icon_source;
+      pixbuf = mn_pixbuf_new(icons[i].filename);
+      icon_set = gtk_icon_set_new_from_pixbuf(pixbuf);
+      g_object_unref(pixbuf);
+    } else if (icons[i].icon_name) {
+      GtkIconSource *icon_source;
 
-	  icon_set = gtk_icon_set_new();
-	  icon_source = gtk_icon_source_new();
-	  gtk_icon_source_set_icon_name(icon_source, icons[i].icon_name);
-	  gtk_icon_set_add_source(icon_set, icon_source);
-	  gtk_icon_source_free(icon_source);
+      icon_set = gtk_icon_set_new();
+      icon_source = gtk_icon_source_new();
+      gtk_icon_source_set_icon_name(icon_source, icons[i].icon_name);
+      gtk_icon_set_add_source(icon_set, icon_source);
+      gtk_icon_source_free(icon_source);
 
-          /* Add a fallback icon */
-	  icon_source = gtk_icon_source_new();
-	  gtk_icon_source_set_icon_name(icon_source, "mail-notification");
-	  gtk_icon_source_set_state_wildcarded(icon_source, TRUE);
-	  gtk_icon_set_add_source(icon_set, icon_source);
-	  gtk_icon_source_free(icon_source);
-	}
-      else if (icons[i].source_stock_id)
-	{
-	  icon_set = gtk_icon_factory_lookup_default(icons[i].source_stock_id);
-	  gtk_icon_set_ref(icon_set);
-	}
-      else
-	g_assert_not_reached();
-
-      gtk_icon_factory_add(factory, icons[i].stock_id, icon_set);
-      gtk_icon_set_unref(icon_set);
+      /* Add a fallback icon */
+      icon_source = gtk_icon_source_new();
+      gtk_icon_source_set_icon_name(icon_source, "mail-notification");
+      gtk_icon_source_set_state_wildcarded(icon_source, TRUE);
+      gtk_icon_set_add_source(icon_set, icon_source);
+      gtk_icon_source_free(icon_source);
+    } else if (icons[i].source_stock_id) {
+      icon_set = gtk_icon_factory_lookup_default(icons[i].source_stock_id);
+      gtk_icon_set_ref(icon_set);
+    } else {
+      g_assert_not_reached();
     }
+
+    gtk_icon_factory_add(factory, icons[i].stock_id, icon_set);
+    gtk_icon_set_unref(icon_set);
+  }
 
   g_object_unref(factory);
 }
