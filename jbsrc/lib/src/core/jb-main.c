@@ -191,7 +191,7 @@ jb_main (int argc,
 			 "C compiler flags",
 			 jb_variable_group_compiler_options,
 			 0,
-			 "-g -O2");
+			 "-g -O0");
   jb_variable_add_string("cppflags",
 			 "C preprocessor flags",
 			 jb_variable_group_compiler_options,
