@@ -152,6 +152,7 @@ jb_package_init (void)
 		       TRUE);
 
   /* misc */
+  jb_variable_add_bool("gtk3", "enable GTK3 support", NULL, 0,FALSE);
   jb_variable_add_bool("compile-warnings", NULL, NULL, 0, FALSE);
   jb_variable_add_bool("debug", NULL, NULL, 0, FALSE);
   jb_variable_add_bool("regression-tests", NULL, NULL, 0, FALSE);
@@ -164,8 +165,14 @@ jb_package_configure (void)
 {
   jb_check_glibc();
 
-  jb_require_packages("GNOME", "gnome", "glib-2.0 >= 2.14 gthread-2.0 gconf-2.0 >= 2.4.0 gtk+-3.0 libgnome-2.0 >= 2.14.0 gnome-vfs-2.0 libxml-2.0 libnotify >= 0.4.1");
+  jb_require_packages("GNOME", "gnome", "glib-2.0 >= 2.14 gthread-2.0 gconf-2.0 >= 2.4.0 libgnome-2.0 >= 2.14.0 gnome-vfs-2.0 libxml-2.0 libnotify >= 0.4.1");
   jb_require_packages("D-Bus", "dbus", "dbus-glib-1");
+
+  if (jb_variable_get_bool("gtk3")) {
+    jb_require_packages("GTK", "gtk", "gtk+-3.0");
+ } else {
+    jb_require_packages("GTK", "gtk", "gtk+-2.0 libgnomeui-2.0");
+  }
 
   jb_check_packages_for_options("GMime", "gmime", "gmime-2.6",
 				"hotmail",
@@ -451,6 +458,7 @@ jb_package_add_resources (void)
 
   jb_compile_options_add_package(object->compile_options, "gettext");
   jb_compile_options_add_package(object->compile_options, "gnome");
+  jb_compile_options_add_package(object->compile_options, "gtk");
   jb_compile_options_add_package(object->compile_options, "dbus");
 
   jb_group_add_dbus_interface(group,
@@ -494,6 +502,7 @@ jb_package_add_resources (void)
 			"mn-stock",
 			"mn-util",
 			"mn-vfs",
+			"mn-widget.c",
 			"mn-xml",
 			"nautilus-cell-renderer-pixbuf-emblem",
 			NULL);

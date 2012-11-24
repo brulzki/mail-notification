@@ -18,7 +18,7 @@
  */
 
 %headertop{
-#include <gtk/gtk.h>
+#include "mn-widget.h"
 %}
 
 %h{
@@ -62,7 +62,7 @@ struct _MNTextTableCell
  * GtkTextView is extremely cumbersome.
  */
 
-class MN:Text:Table from Gtk:Widget
+class MN:Text:Table from Mn:Widget
 {
   private GPtrArray *rows = {g_ptr_array_new()}
     destroy { mn_g_ptr_array_free_deep_custom(VAR, (GFunc) self_row_free, NULL); };
@@ -102,7 +102,7 @@ class MN:Text:Table from Gtk:Widget
   }
 
   private void
-    size_request (GtkWidget *widget, GtkRequisition *requisition)
+  size_request_internal (GtkWidget *widget, GtkRequisition *requisition)
   {
     Self *self = SELF(widget);
 
@@ -112,26 +112,36 @@ class MN:Text:Table from Gtk:Widget
     requisition->height = selfp->height;
   }
 
-  override (Gtk:Widget) void
-    get_preferred_width (GtkWidget * widget, gint * minimal_width, gint * natural_width)
+  override (Mn:Widget) void
+    mn_size_request (GtkWidget *widget, GtkRequisition *requisition)
   {
+    self_size_request_internal(widget, requisition);
+  }
+
+  override (Mn:Widget) void
+    mn_get_preferred_width (GtkWidget * widget, gint * minimal_width, gint * natural_width)
+  {
+#if GTK_CHECK_VERSION(3,0,0)
     GtkRequisition requisition;
 
-    self_size_request (widget, &requisition);
+    self_size_request_internal (widget, &requisition);
     *minimal_width = *natural_width = requisition.width;
+#endif
   }
 
-  override (Gtk:Widget) void
-    get_preferred_height (GtkWidget * widget, gint * minimal_height, gint * natural_height)
+  override (Mn:Widget) void
+    mn_get_preferred_height (GtkWidget * widget, gint * minimal_height, gint * natural_height)
   {
+#if GTK_CHECK_VERSION(3,0,0)
     GtkRequisition requisition;
 
-    self_size_request (widget, &requisition);
+    self_size_request_internal (widget, &requisition);
     *minimal_height = *natural_height = requisition.height;
+#endif
   }
 
-  override (Gtk:Widget) gboolean
-    draw (GtkWidget *widget, cairo_t *cr)
+  private gboolean
+    draw_internal(GtkWidget *widget, GdkEventExpose *event, cairo_t *cr)
   {
     Self *self = SELF(widget);
     GtkAllocation allocation;
@@ -158,6 +168,7 @@ class MN:Text:Table from Gtk:Widget
 	    MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
 
 	    if (cell->layout)
+#if GTK_CHECK_VERSION(3,0,0)
 	      gtk_paint_layout(gtk_widget_get_style(widget),
 			       cr,
 			       gtk_widget_get_state_flags(widget),
@@ -167,6 +178,18 @@ class MN:Text:Table from Gtk:Widget
 			       x,
 			       y + row->height - cell->height,
 			       cell->layout);
+#else
+          gtk_paint_layout(widget->style,
+                           widget->window,
+                           GTK_WIDGET_STATE(widget),
+                           FALSE,
+                           &event->area,
+                           widget,
+                           NULL,
+                           x,
+                           y + row->height - cell->height,
+                           cell->layout);
+#endif
 
 	    x += COLUMN_SIZE(self, column);
 	    if (j < row->cells->len - 1)
@@ -181,6 +204,20 @@ class MN:Text:Table from Gtk:Widget
       }
 
     return FALSE;
+  }
+
+  /* GTK2 only */
+  override (Mn:Widget) gboolean
+    mn_expose_event (GtkWidget *widget, GdkEventExpose *event)
+  {
+      return self_draw_internal(widget, event, NULL);
+  }
+
+  /* GTK3 only */
+  override (Mn:Widget) gboolean
+    mn_draw (GtkWidget *widget, cairo_t *cr)
+  {
+      return self_draw_internal(widget, NULL, cr);
   }
 
   private void

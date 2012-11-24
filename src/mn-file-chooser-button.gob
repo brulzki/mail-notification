@@ -38,7 +38,11 @@ typedef GtkFileChooserDialog *(*MNFileChooserButtonCreateDialogFunction) (gpoint
 
 %{
 #include <glib/gi18n.h>
+#if GTK_CHECK_VERSION(3,0,0)
 #include <libgnome/libgnome.h>
+#else
+#include <libgnomeui/libgnomeui.h>
+#endif
 #include "mn-util.h"
 %}
 
@@ -211,7 +215,7 @@ class MN:File:Chooser:Button from Gtk:HBox
 
     GDK_THREADS_ENTER();
 
-#if 0
+#if !GTK_CHECK_VERSION(3,0,0)
     if (results)
       {
 	GnomeVFSGetFileInfoResult *result = results->data;

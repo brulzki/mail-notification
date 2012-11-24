@@ -26,6 +26,9 @@ class MN:Dialog from Gtk:Dialog (abstract)
   init (self)
   {
     gtk_container_set_border_width(GTK_CONTAINER(self), 5);
+#if !GTK_CHECK_VERSION(3,0,0)
+    gtk_dialog_set_has_separator(GTK_DIALOG(self), FALSE);
+#endif
     gtk_box_set_spacing(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(self))), 2);
   }
 }

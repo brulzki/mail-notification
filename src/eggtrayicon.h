@@ -24,7 +24,13 @@
 #define __EGG_TRAY_ICON_H__
 
 #include <gtk/gtk.h>
+
+#if GTK_CHECK_VERSION(3,0,0)
 #include <gtk/gtkx.h>
+#else
+#include <gtk/gtkplug.h>
+#endif
+
 #include <gdk/gdkx.h>
 
 G_BEGIN_DECLS

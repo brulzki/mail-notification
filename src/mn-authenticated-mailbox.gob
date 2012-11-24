@@ -28,7 +28,11 @@
 
 %{
 #include <glib/gi18n.h>
+#if GTK_CHECK_VERSION(3,0,0)
 #include <libgnome/libgnome.h>
+#else
+#include <libgnomeui/libgnomeui.h>
+#endif
 #include "mn-mailbox-private.h"
 #include "mn-shell.h"
 #include "mn-util.h"
@@ -377,7 +381,9 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
 
     /* keep the title in sync with gnome-authentication-manager */
 
-#if 0
+#if GTK_CHECK_VERSION(3,0,0)
+    return FALSE;
+#else
     /* translators: header capitalization */
     selfp->auth_dialog = gnome_password_dialog_new(_("Authentication Required"),
 						   message,
@@ -410,8 +416,6 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
     gtk_widget_destroy(selfp->auth_dialog);
 
     return ok;
-#else
-    return FALSE;
 #endif
   }
 

@@ -18,7 +18,7 @@
  */
 
 %headertop{
-#include <gtk/gtk.h>
+#include "mn-widget.h"
 %}
 
 %{
@@ -35,7 +35,7 @@
 #define COUNT_BOX_YMARGIN	0
 %}
 
-class MN:Mail:Icon:Widget from Gtk:Widget
+class MN:Mail:Icon:Widget from Mn:Widget
 {
   private gboolean blinking;
   property BOOLEAN blinking (export)
@@ -103,7 +103,7 @@ class MN:Mail:Icon:Widget from Gtk:Widget
   }
 
   private void
-    size_request (GtkWidget *widget, GtkRequisition *requisition)
+    size_request_internal(GtkWidget *widget, GtkRequisition *requisition)
   {
     Self *self = SELF(widget);
     GdkPixbuf *pixbuf;
@@ -121,27 +121,154 @@ class MN:Mail:Icon:Widget from Gtk:Widget
     }
   }
 
-  override (Gtk:Widget) void
-    get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width)
+  override (Mn:Widget) void
+    mn_size_request (GtkWidget *widget, GtkRequisition *requisition)
   {
+    self_size_request_internal(widget, requisition);
+  }
+
+  override (Mn:Widget) void
+    mn_get_preferred_width (GtkWidget *widget, gint *minimal_width, gint *natural_width)
+  {
+#if GTK_CHECK_VERSION(3,0,0)
     GtkRequisition requisition;
 
-     self_size_request (widget, &requisition);
+     self_size_request_internal (widget, &requisition);
      *minimal_width = *natural_width = requisition.width;
+#endif
   }
 
-  override (Gtk:Widget) void
-    get_preferred_height(GtkWidget *widget, gint *minimal_height, gint *natural_height)
+  override (Mn:Widget) void
+    mn_get_preferred_height(GtkWidget *widget, gint *minimal_height, gint *natural_height)
   {
+#if GTK_CHECK_VERSION(3,0,0)
     GtkRequisition requisition;
 
-    self_size_request (widget, &requisition);
+    self_size_request_internal (widget, &requisition);
     *minimal_height = *natural_height = requisition.height;
+#endif
   }
 
-  override (Gtk:Widget) gboolean
-    draw (GtkWidget *widget, cairo_t *cr)
+  /* GTK2 only */
+  override (Mn:Widget) gboolean
+    mn_expose_event (GtkWidget *widget, GdkEventExpose *event)
   {
+#if !GTK_CHECK_VERSION(3,0,0)
+      Self *self = SELF(widget);
+
+      if (! GTK_WIDGET_DRAWABLE(widget) || ! selfp->stock_id)
+        return FALSE;
+
+      if (selfp->is_on)
+        {
+      int x;
+      int y;
+      GdkRectangle image_area;
+
+      /* note: widget->requisition is the pixbuf size, see size_request() */
+
+      x = floor(widget->allocation.x + ((widget->allocation.width - widget->requisition.width) * ICON_XALIGN));
+      y = floor(widget->allocation.y + ((widget->allocation.height - widget->requisition.height) * ICON_YALIGN));
+
+      image_area.x = x;
+      image_area.y = y;
+      image_area.width = widget->requisition.width;
+      image_area.height = widget->requisition.height;
+
+      if (gdk_rectangle_intersect(&event->area, &image_area, &image_area))
+        {
+          GdkPixbuf *pixbuf;
+
+          pixbuf = self_render_icon(self);
+
+          gdk_draw_pixbuf(widget->window,
+                  NULL,
+                  pixbuf,
+                  image_area.x - x,
+                  image_area.y - y,
+                  image_area.x,
+                  image_area.y,
+                  image_area.width,
+                  image_area.height,
+                  GDK_RGB_DITHER_NORMAL,
+                  0,
+                  0);
+
+          g_object_unref(pixbuf);
+        }
+        }
+
+      if (selfp->count)
+        {
+      PangoRectangle count_rect;
+      int count_x;
+      int count_y;
+      int box_x;
+      int box_y;
+      int box_width;
+      int box_height;
+
+      if (! selfp->count_layout)
+        {
+          const char *size;
+          char *markup;
+
+          if (widget->allocation.height < 32)
+            size = "small";
+          else
+            size = "medium";
+
+          selfp->count_layout = gtk_widget_create_pango_layout(widget, NULL);
+
+          markup = g_strdup_printf("<span size=\"%s\">%i</span>", size, selfp->count);
+          pango_layout_set_markup(selfp->count_layout, markup, -1);
+          g_free(markup);
+        }
+
+      pango_layout_get_pixel_extents(selfp->count_layout, &count_rect, NULL);
+
+      box_width = count_rect.width + COUNT_BOX_XPAD * 2;
+      box_height = count_rect.height + COUNT_BOX_YPAD * 2;
+
+      box_x = widget->allocation.x + widget->allocation.width - box_width - COUNT_BOX_XMARGIN;
+      box_y = widget->allocation.y + widget->allocation.height - box_height - COUNT_BOX_YMARGIN;
+
+      count_x = box_x - count_rect.x + COUNT_BOX_XPAD;
+      count_y = box_y - count_rect.y + COUNT_BOX_YPAD;
+
+      gtk_paint_box(widget->style,
+                widget->window,
+                GTK_WIDGET_STATE(widget),
+                GTK_SHADOW_OUT,
+                &event->area,
+                widget,
+                NULL,
+                box_x,
+                box_y,
+                box_width,
+                box_height);
+
+      gtk_paint_layout(widget->style,
+               widget->window,
+               GTK_WIDGET_STATE(widget),
+               FALSE,
+               &event->area,
+               widget,
+               NULL,
+               count_x,
+               count_y,
+               selfp->count_layout);
+        }
+#endif
+
+      return FALSE;
+  }
+
+  /* GTK3 only */
+  override (Mn:Widget) gboolean
+    mn_draw (GtkWidget *widget, cairo_t *cr)
+  {
+#if GTK_CHECK_VERSION(3,0,0)
     Self *self = SELF(widget);
 
     if (! gtk_widget_is_drawable(widget) || ! selfp->stock_id)
@@ -153,6 +280,7 @@ class MN:Mail:Icon:Widget from Gtk:Widget
       GdkRectangle image_area;
       GtkAllocation allocation;
       GtkRequisition requisition;
+      GdkPixbuf *pixbuf;
 
       /* note: widget->requisition is the pixbuf size, see size_request() */
 
@@ -167,34 +295,12 @@ class MN:Mail:Icon:Widget from Gtk:Widget
       image_area.width = requisition.width;
       image_area.height = requisition.height;
 
-#if 0
-      if (gdk_rectangle_intersect(&event->area, &image_area, &image_area))
-#endif
-	  {
-        GdkPixbuf *pixbuf;
+      pixbuf = self_render_icon(self);
+      gdk_cairo_set_source_pixbuf(cr, pixbuf, image_area.x, image_area.y);
+      cairo_move_to(cr, image_area.x - x, image_area.y - y);
+      cairo_paint(cr);
 
-        pixbuf = self_render_icon(self);
-        gdk_cairo_set_source_pixbuf(cr, pixbuf, image_area.x, image_area.y);
-        cairo_move_to(cr, image_area.x - x, image_area.y - y);
-        cairo_paint(cr);
-
-#if 0
-        gdk_draw_pixbuf(widget->window,
-                        NULL,
-                        pixbuf,
-                        image_area.x - x,
-                        image_area.y - y,
-                        image_area.x,
-                        image_area.y,
-                        image_area.width,
-                        image_area.height,
-                        GDK_RGB_DITHER_NORMAL,
-                        0,
-                        0);
-#endif
-
-        g_object_unref(pixbuf);
-	  }
+      g_object_unref(pixbuf);
     }
 
     if (selfp->count) {
@@ -257,6 +363,7 @@ class MN:Mail:Icon:Widget from Gtk:Widget
                        count_y,
                        selfp->count_layout);
     }
+#endif
 
     return FALSE;
   }
@@ -303,10 +410,10 @@ class MN:Mail:Icon:Widget from Gtk:Widget
     return TRUE;
   }
 
-  public GtkWidget *
+  public MnWidget *
     new (void)
   {
-    return GTK_WIDGET(GET_NEW);
+    return MN_WIDGET(GET_NEW);
   }
 
   public void

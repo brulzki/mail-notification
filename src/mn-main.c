@@ -21,7 +21,11 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <glib/gi18n.h>
+#include <gtk/gtk.h>
 #include <libgnome/libgnome.h>
+#if !GTK_CHECK_VERSION(3,0,0)
+#include <libgnomeui/libgnomeui.h>
+#endif
 #include <libgnomevfs/gnome-vfs.h>
 #include <libnotify/notify.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -499,7 +503,7 @@ main (int argc, char **argv)
 	  if (! gnome_vfs_init())
 	    mn_show_fatal_error_dialog(NULL, _("Unable to initialize the GnomeVFS library."));
 
-#if 0
+#if !GTK_CHECK_VERSION(3,0,0)
 	  gnome_authentication_manager_init();
 #endif
 

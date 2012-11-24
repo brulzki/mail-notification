@@ -357,25 +357,32 @@ egg_tray_icon_update_manager_window (EggTrayIcon *icon,
     }
 }
 
+#if GTK_CHECK_VERSION(3,0,0)
 static gboolean
 transparent_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data)
 {
-#if 0
-  gdk_window_clear_area (widget->window, event->area.x, event->area.y,
-			 event->area.width, event->area.height);
-#endif
   cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-  //gdk_cairo_region (cr, event->region);
   cairo_fill (cr);
 
   return FALSE;
 }
+#else
+static gboolean
+transparent_expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
+{
+  gdk_window_clear_area (widget->window, event->area.x, event->area.y,
+                         event->area.width, event->area.height);
+  return FALSE;
+}
+#endif
 
 static void
 make_transparent_again (GtkWidget *widget, GtkStyle *previous_style,
 			gpointer user_data)
 {
-  //gdk_window_set_back_pixmap (widget->window, NULL, TRUE);
+#if !GTK_CHECK_VERSION(3,0,0)
+  gdk_window_set_back_pixmap (widget->window, NULL, TRUE);
+#endif
 }
 
 static void
@@ -386,9 +393,15 @@ make_transparent (GtkWidget *widget, gpointer user_data)
 
   gtk_widget_set_app_paintable (widget, TRUE);
   gtk_widget_set_double_buffered (widget, FALSE);
-  //gdk_window_set_back_pixmap (widget->window, NULL, TRUE);
+#if GTK_CHECK_VERSION(3,0,0)
   g_signal_connect (widget, "draw",
-		    G_CALLBACK (transparent_draw), NULL);
+            G_CALLBACK (transparent_draw), NULL);
+#else
+  gdk_window_set_back_pixmap (widget->window, NULL, TRUE);
+  g_signal_connect (widget, "expose_event",
+                    G_CALLBACK (transparent_expose_event), NULL);
+#endif
+
   g_signal_connect_after (widget, "style_set",
 			  G_CALLBACK (make_transparent_again), NULL);
 }

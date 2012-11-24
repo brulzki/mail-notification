@@ -36,7 +36,6 @@
                       <object class="GtkVBox" id="vbox22">
                         <property name="visible">True</property>
                         <property name="spacing">6</property>
-                        <property name="expand">False</property>
                         <child>
                           <object class="GtkLabel" id="label36">
                             <property name="visible">True</property>

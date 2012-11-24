@@ -176,28 +176,35 @@ class MN:Tooltips from G:Object
   private void
     force_window (self)
   {
-    if (! selfp->window)
-      {
-	GtkStyleContext *ctx;
+    if (! selfp->window) {
+#if GTK_CHECK_VERSION(3,0,0)
+      GtkStyleContext *ctx;
+#endif
 
-	selfp->window = gtk_window_new(GTK_WINDOW_POPUP);
+      selfp->window = gtk_window_new(GTK_WINDOW_POPUP);
 
-	ctx = gtk_widget_get_style_context(GTK_WIDGET(selfp->window));
-	gtk_style_context_add_class(ctx, "tooltip");
+#if GTK_CHECK_VERSION(3,0,0)
+      ctx = gtk_widget_get_style_context(GTK_WIDGET(selfp->window));
+      gtk_style_context_add_class(ctx, "tooltip");
+#endif
 
-	self_update_screen(self, TRUE);
-	gtk_widget_set_app_paintable(selfp->window, TRUE);
-	gtk_window_set_resizable(GTK_WINDOW(selfp->window), FALSE);
-	gtk_widget_set_name(selfp->window, "gtk-tooltips");
-	gtk_container_set_border_width(GTK_CONTAINER(selfp->window), selfp->border_width);
+      self_update_screen(self, TRUE);
+      gtk_widget_set_app_paintable(selfp->window, TRUE);
+      gtk_window_set_resizable(GTK_WINDOW(selfp->window), FALSE);
+      gtk_widget_set_name(selfp->window, "gtk-tooltips");
+      gtk_container_set_border_width(GTK_CONTAINER(selfp->window), selfp->border_width);
 
-	g_signal_connect_swapped(selfp->window,
-				 "draw",
-				 G_CALLBACK(self_paint_window),
-				 self);
+      g_signal_connect_swapped(selfp->window,
+#if GTK_CHECK_VERSION(3,0,0)
+                               "draw",
+#else
+                               "expose-event",
+#endif
+                               G_CALLBACK(self_paint_window),
+                               self);
 
-	mn_add_weak_pointer(&selfp->window);
-      }
+      mn_add_weak_pointer(&selfp->window);
+    }
   }
 
   private TooltipsData *
@@ -301,12 +308,26 @@ class MN:Tooltips from G:Object
     GtkRequisition req;
 
     gtk_widget_size_request(GTK_WIDGET(selfp->window), &req);
+#if GTK_CHECK_VERSION(3,0,0)
     gtk_render_background(gtk_widget_get_style_context(GTK_WIDGET(selfp->window)),
                                                        cr,
                                                        0,
                                                        0,
                                                        req.width,
                                                        req.height);
+#else
+    gtk_paint_flat_box(selfp->window->style,
+                       selfp->window->window,
+                       GTK_STATE_NORMAL,
+                       GTK_SHADOW_OUT,
+                       NULL,
+                       selfp->window,
+                       "tooltip",
+                       0,
+                       0,
+                       req.width,
+                       req.height);
+#endif
 
     return FALSE;
   }
