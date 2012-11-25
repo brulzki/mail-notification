@@ -154,13 +154,12 @@ class MN:Mail:Icon:Widget from Mn:Widget
     mn_expose_event (GtkWidget *widget, GdkEventExpose *event)
   {
 #if !GTK_CHECK_VERSION(3,0,0)
-      Self *self = SELF(widget);
+    Self *self = SELF(widget);
 
-      if (! GTK_WIDGET_DRAWABLE(widget) || ! selfp->stock_id)
-        return FALSE;
+    if (! GTK_WIDGET_DRAWABLE(widget) || ! selfp->stock_id)
+      return FALSE;
 
-      if (selfp->is_on)
-        {
+    if (selfp->is_on) {
       int x;
       int y;
       GdkRectangle image_area;
@@ -175,31 +174,29 @@ class MN:Mail:Icon:Widget from Mn:Widget
       image_area.width = widget->requisition.width;
       image_area.height = widget->requisition.height;
 
-      if (gdk_rectangle_intersect(&event->area, &image_area, &image_area))
-        {
-          GdkPixbuf *pixbuf;
+      if (gdk_rectangle_intersect(&event->area, &image_area, &image_area)) {
+        GdkPixbuf *pixbuf;
 
-          pixbuf = self_render_icon(self);
+        pixbuf = self_render_icon(self);
 
-          gdk_draw_pixbuf(widget->window,
-                  NULL,
-                  pixbuf,
-                  image_area.x - x,
-                  image_area.y - y,
-                  image_area.x,
-                  image_area.y,
-                  image_area.width,
-                  image_area.height,
-                  GDK_RGB_DITHER_NORMAL,
-                  0,
-                  0);
+        gdk_draw_pixbuf(widget->window,
+                        NULL,
+                        pixbuf,
+                        image_area.x - x,
+                        image_area.y - y,
+                        image_area.x,
+                        image_area.y,
+                        image_area.width,
+                        image_area.height,
+                        GDK_RGB_DITHER_NORMAL,
+                        0,
+                        0);
 
-          g_object_unref(pixbuf);
-        }
-        }
+        g_object_unref(pixbuf);
+      }
+    }
 
-      if (selfp->count)
-        {
+    if (selfp->count) {
       PangoRectangle count_rect;
       int count_x;
       int count_y;
@@ -208,22 +205,21 @@ class MN:Mail:Icon:Widget from Mn:Widget
       int box_width;
       int box_height;
 
-      if (! selfp->count_layout)
-        {
-          const char *size;
-          char *markup;
+      if (! selfp->count_layout) {
+        const char *size;
+        char *markup;
 
-          if (widget->allocation.height < 32)
-            size = "small";
-          else
-            size = "medium";
+        if (widget->allocation.height < 32)
+          size = "small";
+        else
+          size = "medium";
 
-          selfp->count_layout = gtk_widget_create_pango_layout(widget, NULL);
+        selfp->count_layout = gtk_widget_create_pango_layout(widget, NULL);
 
-          markup = g_strdup_printf("<span size=\"%s\">%i</span>", size, selfp->count);
-          pango_layout_set_markup(selfp->count_layout, markup, -1);
-          g_free(markup);
-        }
+        markup = g_strdup_printf("<span size=\"%s\">%i</span>", size, selfp->count);
+        pango_layout_set_markup(selfp->count_layout, markup, -1);
+        g_free(markup);
+      }
 
       pango_layout_get_pixel_extents(selfp->count_layout, &count_rect, NULL);
 
@@ -237,31 +233,31 @@ class MN:Mail:Icon:Widget from Mn:Widget
       count_y = box_y - count_rect.y + COUNT_BOX_YPAD;
 
       gtk_paint_box(widget->style,
-                widget->window,
-                GTK_WIDGET_STATE(widget),
-                GTK_SHADOW_OUT,
-                &event->area,
-                widget,
-                NULL,
-                box_x,
-                box_y,
-                box_width,
-                box_height);
+                    widget->window,
+                    GTK_WIDGET_STATE(widget),
+                    GTK_SHADOW_OUT,
+                    &event->area,
+                    widget,
+                    NULL,
+                    box_x,
+                    box_y,
+                    box_width,
+                    box_height);
 
       gtk_paint_layout(widget->style,
-               widget->window,
-               GTK_WIDGET_STATE(widget),
-               FALSE,
-               &event->area,
-               widget,
-               NULL,
-               count_x,
-               count_y,
-               selfp->count_layout);
-        }
+                       widget->window,
+                       GTK_WIDGET_STATE(widget),
+                       FALSE,
+                       &event->area,
+                       widget,
+                       NULL,
+                       count_x,
+                       count_y,
+                       selfp->count_layout);
+    }
 #endif
 
-      return FALSE;
+    return FALSE;
   }
 
   /* GTK3 only */
