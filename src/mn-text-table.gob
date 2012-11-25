@@ -81,9 +81,9 @@ class MN:Text:Table from Mn:Widget
     gtk_widget_set_has_window(GTK_WIDGET(self), FALSE);
 
     g_object_connect(self,
-		     "swapped-signal::style-set", self_context_changed, self,
-		     "swapped-signal::direction-changed", self_context_changed, self,
-		     NULL);
+                     "swapped-signal::style-set", self_context_changed, self,
+                     "swapped-signal::direction-changed", self_context_changed, self,
+                     NULL);
   }
 
   private void
@@ -158,34 +158,32 @@ class MN:Text:Table from Mn:Widget
 
     self_relayout(self);
 
-    MN_ARRAY_FOREACH(i, selfp->rows)
-      {
-	Row *row = g_ptr_array_index(selfp->rows, i);
-	int j;
-    int x;
-	int column = 0;
+    MN_ARRAY_FOREACH(i, selfp->rows) {
+      Row *row = g_ptr_array_index(selfp->rows, i);
+      int j;
+      int x;
+      int column = 0;
 
 #if GTK_CHECK_VERSION(3,0,0)
-    x = 0;
+      x = 0;
 #else
-    x = widget->allocation.x;
+      x = widget->allocation.x;
 #endif
 
-	MN_ARRAY_FOREACH(j, row->cells)
-	  {
-	    MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
+      MN_ARRAY_FOREACH(j, row->cells) {
+        MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
 
-	    if (cell->layout)
+        if (cell->layout) {
 #if GTK_CHECK_VERSION(3,0,0)
-	      gtk_paint_layout(gtk_widget_get_style(widget),
-			       cr,
-			       gtk_widget_get_state_flags(widget),
-			       FALSE,
-			       widget,
-			       NULL,
-			       x,
-			       y + row->height - cell->height,
-			       cell->layout);
+          gtk_paint_layout(gtk_widget_get_style(widget),
+                           cr,
+                           gtk_widget_get_state_flags(widget),
+                           FALSE,
+                           widget,
+                           NULL,
+                           x,
+                           y + row->height - cell->height,
+                           cell->layout);
 #else
           gtk_paint_layout(widget->style,
                            widget->window,
@@ -198,18 +196,19 @@ class MN:Text:Table from Mn:Widget
                            y + row->height - cell->height,
                            cell->layout);
 #endif
+        }
 
-	    x += COLUMN_SIZE(self, column);
-	    if (j < row->cells->len - 1)
-	      x += HORIZONTAL_SPACING;
+        x += COLUMN_SIZE(self, column);
+        if (j < row->cells->len - 1)
+          x += HORIZONTAL_SPACING;
 
-	    column++;
-	  }
-
-	y += row->height;
-	if (i < selfp->rows->len - 1)
-	  y += VERTICAL_SPACING;
+        column++;
       }
+
+      y += row->height;
+      if (i < selfp->rows->len - 1)
+        y += VERTICAL_SPACING;
+    }
 
     return FALSE;
   }
@@ -231,11 +230,10 @@ class MN:Text:Table from Mn:Widget
   private void
     set_dirty (self)
   {
-    if (! selfp->dirty)
-      {
-	selfp->dirty = TRUE;
-	gtk_widget_queue_resize(GTK_WIDGET(self));
-      }
+    if (! selfp->dirty) {
+      selfp->dirty = TRUE;
+      gtk_widget_queue_resize(GTK_WIDGET(self));
+    }
   }
 
   private void
@@ -243,22 +241,19 @@ class MN:Text:Table from Mn:Widget
   {
     int i;
 
-    MN_ARRAY_FOREACH(i, selfp->rows)
-      {
-	Row *row = g_ptr_array_index(selfp->rows, i);
-	int j;
+    MN_ARRAY_FOREACH(i, selfp->rows) {
+      Row *row = g_ptr_array_index(selfp->rows, i);
+      int j;
 
-	MN_ARRAY_FOREACH(j, row->cells)
-	  {
-	    MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
+      MN_ARRAY_FOREACH(j, row->cells) {
+        MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
 
-	    if (cell->layout)
-	      {
-		pango_layout_context_changed(cell->layout);
-		cell->dirty = TRUE;
-	      }
-	  }
+        if (cell->layout) {
+          pango_layout_context_changed(cell->layout);
+          cell->dirty = TRUE;
+        }
       }
+    }
 
     self_set_dirty(self);
   }
@@ -277,37 +272,34 @@ class MN:Text:Table from Mn:Widget
     MN_ARRAY_FOREACH(i, selfp->column_sizes)
       COLUMN_SIZE(self, i) = 0;
 
-    MN_ARRAY_FOREACH(i, selfp->rows)
-      {
-	Row *row = g_ptr_array_index(selfp->rows, i);
-	int j;
+    MN_ARRAY_FOREACH(i, selfp->rows) {
+      Row *row = g_ptr_array_index(selfp->rows, i);
+      int j;
 
-	row->height = 0;
+      row->height = 0;
 
-	MN_ARRAY_FOREACH(j, row->cells)
-	  {
-	    MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
-	    int n_columns = j + 1;
+      MN_ARRAY_FOREACH(j, row->cells) {
+        MNTextTableCell *cell = g_ptr_array_index(row->cells, j);
+        int n_columns = j + 1;
 
-	    if (cell->dirty)
-	      {
-		g_assert(cell->layout != NULL);
+        if (cell->dirty) {
+          g_assert(cell->layout != NULL);
 
-		pango_layout_get_pixel_size(cell->layout, &cell->width, &cell->height);
-		cell->dirty = FALSE;
-	      }
+          pango_layout_get_pixel_size(cell->layout, &cell->width, &cell->height);
+          cell->dirty = FALSE;
+        }
 
-	    if (n_columns > selfp->column_sizes->len)
-	      g_array_set_size(selfp->column_sizes, n_columns);
+        if (n_columns > selfp->column_sizes->len)
+          g_array_set_size(selfp->column_sizes, n_columns);
 
-	    if (cell->width > COLUMN_SIZE(self, j))
-	      COLUMN_SIZE(self, j) = cell->width;
-	    if (cell->height > row->height)
-	      row->height = cell->height;
-	  }
-
-	selfp->height += row->height;
+        if (cell->width > COLUMN_SIZE(self, j))
+          COLUMN_SIZE(self, j) = cell->width;
+        if (cell->height > row->height)
+          row->height = cell->height;
       }
+
+      selfp->height += row->height;
+    }
 
     MN_ARRAY_FOREACH(i, selfp->column_sizes)
       selfp->width += COLUMN_SIZE(self, i);
@@ -383,13 +375,12 @@ class MN:Text:Table from Mn:Widget
   private void
     append_cell_real (self, MNTextTableCell *cell)
   {
-    if (! selfp->row)
-      {
-	selfp->row = g_new(Row, 1);
-	selfp->row->cells = g_ptr_array_new();
+    if (! selfp->row) {
+      selfp->row = g_new(Row, 1);
+      selfp->row->cells = g_ptr_array_new();
 
-	g_ptr_array_add(selfp->rows, selfp->row);
-      }
+      g_ptr_array_add(selfp->rows, selfp->row);
+    }
 
     g_ptr_array_add(selfp->row->cells, cell);
 
@@ -406,12 +397,11 @@ class MN:Text:Table from Mn:Widget
     g_return_if_fail(cell->layout != NULL);
 
     current_text = pango_layout_get_text(cell->layout);
-    if (! current_text || strcmp(current_text, text))
-      {
-	pango_layout_set_text(cell->layout, text, -1);
-	cell->dirty = TRUE;
-	self_set_dirty(self);
-      }
+    if (! current_text || strcmp(current_text, text)) {
+      pango_layout_set_text(cell->layout, text, -1);
+      cell->dirty = TRUE;
+      self_set_dirty(self);
+    }
   }
 
   public void
