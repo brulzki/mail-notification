@@ -144,12 +144,14 @@ class MN:Text:Table from Mn:Widget
     draw_internal(GtkWidget *widget, GdkEventExpose *event, cairo_t *cr)
   {
     Self *self = SELF(widget);
-    GtkAllocation allocation;
     int i;
     int y;
 
-    gtk_widget_get_allocation(widget, &allocation);
+#if GTK_CHECK_VERSION(3,0,0)
     y = 0;
+#else
+    y = widget->allocation.y;
+#endif
 
     if (! gtk_widget_is_drawable(widget))
       return FALSE;
@@ -160,8 +162,14 @@ class MN:Text:Table from Mn:Widget
       {
 	Row *row = g_ptr_array_index(selfp->rows, i);
 	int j;
-	int x = 0;
+    int x;
 	int column = 0;
+
+#if GTK_CHECK_VERSION(3,0,0)
+    x = 0;
+#else
+    x = widget->allocation.x;
+#endif
 
 	MN_ARRAY_FOREACH(j, row->cells)
 	  {
