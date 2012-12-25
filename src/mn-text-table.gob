@@ -90,14 +90,17 @@ class MN:Text:Table from Mn:Widget
     row_free (Row *row (check null))
   {
     mn_g_ptr_array_free_deep_custom(row->cells, (GFunc) self_cell_free, NULL);
+    row->cells = NULL;
     g_free(row);
   }
 
   private void
     cell_free (MNTextTableCell *cell (check null))
   {
-    if (cell->layout)
+    if (cell->layout) {
       g_object_unref(cell->layout);
+      cell->layout = NULL;
+    }
     g_free(cell);
   }
 
