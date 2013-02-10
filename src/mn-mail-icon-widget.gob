@@ -232,6 +232,7 @@ class MN:Mail:Icon:Widget from Mn:Widget
       count_x = box_x - count_rect.x + COUNT_BOX_XPAD;
       count_y = box_y - count_rect.y + COUNT_BOX_YPAD;
 
+#if !GTK_CHECK_VERSION(2,8,0)
       gtk_paint_box(widget->style,
                     widget->window,
                     GTK_WIDGET_STATE(widget),
@@ -243,6 +244,22 @@ class MN:Mail:Icon:Widget from Mn:Widget
                     box_y,
                     box_width,
                     box_height);
+#else
+      cairo_t *cr;
+      cr = gdk_cairo_create(GDK_DRAWABLE(widget->window));
+      cairo_save(cr);
+      cairo_set_line_width(cr, 2.0);
+      cairo_set_source_rgba (cr, 0.66, 0.62, 0.55, 1.0);
+      cairo_rectangle (cr, box_x, box_y, box_width, box_height);
+      cairo_stroke_preserve (cr);
+
+      cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+      cairo_set_source_rgba (cr, 0.93, 0.91, 0.89, 0.8);
+      cairo_fill(cr);
+
+      cairo_restore(cr);
+      cairo_destroy(cr);
+#endif
 
       gtk_paint_layout(widget->style,
                        widget->window,
@@ -291,10 +308,12 @@ class MN:Mail:Icon:Widget from Mn:Widget
       image_area.width = requisition.width;
       image_area.height = requisition.height;
 
+      cairo_save(cr);
       pixbuf = self_render_icon(self);
       gdk_cairo_set_source_pixbuf(cr, pixbuf, image_area.x, image_area.y);
       cairo_move_to(cr, image_area.x - x, image_area.y - y);
       cairo_paint(cr);
+      cairo_restore(cr);
 
       g_object_unref(pixbuf);
     }
@@ -338,16 +357,17 @@ class MN:Mail:Icon:Widget from Mn:Widget
       count_x = box_x - count_rect.x + COUNT_BOX_XPAD;
       count_y = box_y - count_rect.y + COUNT_BOX_YPAD;
 
-      gtk_paint_box(gtk_widget_get_style(widget),
-                    cr,
-                    gtk_widget_get_state_flags(widget),
-                    GTK_SHADOW_OUT,
-                    widget,
-                    NULL,
-                    box_x,
-                    box_y,
-                    box_width,
-                    box_height);
+      cairo_save(cr);
+      cairo_set_line_width(cr, 2.0);
+      cairo_set_source_rgba (cr, 0.66, 0.62, 0.55, 1.0);
+      cairo_rectangle (cr, box_x, box_y, box_width, box_height);
+      cairo_stroke_preserve (cr);
+
+      cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+      cairo_set_source_rgba (cr, 0.93, 0.91, 0.89, 0.8);
+      cairo_fill(cr);
+
+      cairo_restore(cr);
 
       gtk_paint_layout(gtk_widget_get_style(widget),
                        cr,
