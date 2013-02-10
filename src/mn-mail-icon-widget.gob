@@ -107,6 +107,8 @@ class MN:Mail:Icon:Widget from Mn:Widget
   {
     Self *self = SELF(widget);
     GdkPixbuf *pixbuf;
+    static int prev_width = 0;
+    static int prev_height = 0;
 
     pixbuf = self_render_icon(self);
 
@@ -118,6 +120,14 @@ class MN:Mail:Icon:Widget from Mn:Widget
     } else {
       requisition->width = 0;
       requisition->height = 0;
+    }
+
+    if (prev_width != requisition->width ||
+        prev_height != requisition->height) {
+
+        prev_width = requisition->width;
+        prev_height = requisition->height;
+        gtk_widget_queue_draw(GTK_WIDGET(self));
     }
   }
 
