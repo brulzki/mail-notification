@@ -572,6 +572,7 @@ class MN:Shell from G:Object
 	 * icon to remain visible on non-GNOME environments. We can't
 	 * use the callback self_icon_destroy_h here as it can cause an
 	 * endless recursion */
+	gtk_widget_unrealize(GTK_WIDGET(self->icon));
 	g_signal_handlers_disconnect_by_func(self->icon, self_icon_destroy_h, self);
 	gtk_widget_destroy(GTK_WIDGET(self->icon));
 	self_init_icon_base(self);
