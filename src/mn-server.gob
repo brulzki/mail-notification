@@ -87,6 +87,11 @@ class MN:Server from G:Object
   private gboolean
     display_properties (self, GError **err)
   {
+    /* mn_shell can be NULL here when during startup a configuration error was detected.
+     * See https://bugzilla.redhat.com/show_bug.cgi?id=847543 for details and backtrace */
+    if (!mn_shell)
+      return TRUE;
+
     GDK_THREADS_ENTER();
     mn_shell_show_properties_dialog(mn_shell, 0);
     GDK_THREADS_LEAVE();
