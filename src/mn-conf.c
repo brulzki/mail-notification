@@ -1021,7 +1021,7 @@ mn_conf_execute_mail_reader (void)
     : g_strdup(command);
   g_free(command);
 
-  if (! strcmp(program, "mozilla"))
+  if (! strcmp(program, "mozilla") || ! strcmp(program, "seamonkey"))
     command = g_strdup_printf("%s -mail", program);
   else if (! strcmp(program, "evolution"))
     command = g_strdup_printf("%s --component=mail", program);
