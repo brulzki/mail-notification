@@ -421,6 +421,10 @@ mn_conf_set_value (const char *key, const GConfValue *value)
   handle_error(&err);
 }
 
+#ifdef bool
+#undef bool
+#endif
+
 #define CONF_GETTER(name, ctype, fail_retval)				\
   ctype									\
   mn_conf_get_ ## name (const char *key)				\
