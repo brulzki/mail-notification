@@ -427,12 +427,11 @@ jb_package_add_resources (void)
     {
       /*
        * We need -std=c99 for lround(), ...
-       * We need _BSD_SOURCE (which requires -lbsd-compat) for fchmod(), ...
-       * We need _POSIX_C_SOURCE for fdopen(), ...
+       * We need _POSIX_C_SOURCE for fdopen(), fchmod(), getaddrinfo(), getnameinfo() ...
+       * We need _DEFAULT_SOURCE for NI_MAXHOST in getnameinfo()
        */
       jb_compile_options_add_cflags(object->compile_options, "-std=c99");
-      jb_compile_options_add_cppflags(object->compile_options, "-D_BSD_SOURCE -D_POSIX_C_SOURCE=199309L");
-      jb_compile_options_add_libs(object->compile_options, "-lbsd-compat");
+      jb_compile_options_add_cppflags(object->compile_options, "-D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200112L");
     }
 
   jb_compile_options_add_string_defines(object->compile_options,
