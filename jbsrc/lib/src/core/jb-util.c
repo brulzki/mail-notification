@@ -208,6 +208,10 @@ jb_message_result_string_format (const char *format, ...)
   g_free(message);
 }
 
+#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+static void print_warning_or_error (const char *prefix, const char *format, va_list args) __attribute__ ((format(printf, 1, 0)));
+#endif
+
 static void
 print_warning_or_error (const char *prefix, const char *format, va_list args)
 {
