@@ -164,8 +164,6 @@ gconf_init (void)
 static void
 gconf_configure (void)
 {
-  JBVariable *variable;
-
   jb_require_program("gconftool-2");
 
   if (! strcmp(jb_variable_get_string("gconf-config-source"), "autodetect"))
@@ -177,21 +175,6 @@ gconf_configure (void)
 
       jb_variable_set_string("gconf-config-source", config_source);
       g_free(config_source);
-    }
-
-  /* fix the default schemas dir on Ubuntu */
-  variable = jb_variable_get_variable_or_error("gconf-schemas-dir");
-  if (! variable->user_set)
-    {
-      static const char *ubuntu_dir = "$datadir/gconf/schemas";
-      char *expanded;
-
-      expanded = jb_variable_expand(ubuntu_dir, NULL);
-
-      if (g_file_test(expanded, G_FILE_TEST_IS_DIR))
-	jb_variable_set_string("gconf-schemas-dir", ubuntu_dir);
-
-      g_free(expanded);
     }
 }
 
