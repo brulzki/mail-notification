@@ -186,7 +186,15 @@ jb_package_configure (void)
 				"yahoo",
 				NULL);
 
-  jb_check_packages_for_options("GNOME Keyring", "gnome-keyring", "gnome-keyring-1",
+  jb_check_packages_for_options("libsecret", "libsecret", "libsecret-1",
+				"pop3",
+				"imap",
+				"gmail",
+				"yahoo",
+				"hotmail",
+				NULL);
+
+  jb_check_packages_for_options("libsecret", "libsecret", "libsecret-1",
 				"pop3",
 				"imap",
 				"gmail",
@@ -551,11 +559,10 @@ jb_package_add_resources (void)
       || jb_variable_get_bool("yahoo")
       || jb_variable_get_bool("hotmail"))
     {
-      jb_compile_options_add_package(object->compile_options, "gnome-keyring");
+      jb_compile_options_add_package(object->compile_options, "libsecret");
       jb_object_add_sources(object,
 			    "MN:Authenticated:Mailbox",
 			    "MN:Authenticated:Mailbox:Properties",
-			    "mn-keyring",
 			    NULL);
     }
 

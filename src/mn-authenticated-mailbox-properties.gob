@@ -1,6 +1,7 @@
 /*
  * Mail Notification
  * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *               2022      Bruce Schultz <brulzki@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +46,8 @@ class MN:Authenticated:Mailbox:Properties from MN:Mailbox:Properties (abstract)
   private GtkWidget *password_widget;
 
   private MNAuthenticatedMailbox *mailbox_setting_password;
-  private gpointer get_password_request;
+  private GCancellable *cancellable = {g_cancellable_new ()}
+    destroywith g_object_unref;
 
   init (self)
   {
@@ -153,11 +155,8 @@ class MN:Authenticated:Mailbox:Properties from MN:Mailbox:Properties (abstract)
 	selfp->mailbox_setting_password = NULL;
       }
 
-    if (selfp->get_password_request)
-      {
-	gnome_keyring_cancel_request(selfp->get_password_request);
-	selfp->get_password_request = NULL;
-      }
+    // cancel any active password requests
+    g_cancellable_cancel(selfp->cancellable);
   }
 
   private void
@@ -184,16 +183,17 @@ class MN:Authenticated:Mailbox:Properties from MN:Mailbox:Properties (abstract)
   {
     self_set_password_operation(self, _("Retrieving password from keyring..."));
 
-    selfp->get_password_request = mn_authenticated_mailbox_get_password(mailbox,
-									self_get_password_cb,
-									self);
+    g_cancellable_reset(selfp->cancellable);
+    mn_authenticated_mailbox_get_password(mailbox,
+                                          self_get_password_cb,
+                                          selfp->cancellable,
+                                          self);
   }
 
   private void
-    get_password_cb (GnomeKeyringResult result, GList *list, gpointer data)
+    get_password_cb (const gchar *password, const GError *error, gpointer data)
   {
     Self *self = data;
-    const char *password = NULL;
 
     /*
      * If the request was cancelled, it is either from dispose() and
@@ -201,16 +201,9 @@ class MN:Authenticated:Mailbox:Properties from MN:Mailbox:Properties (abstract)
      * loop callback), or it is from set_mailbox() and the password
      * will be retrieved again. In both cases we must do nothing.
      */
-    if (result == GNOME_KEYRING_RESULT_CANCELLED)
+    if (error != NULL && error->code == G_IO_ERROR_CANCELLED) {
       return;
-
-    selfp->get_password_request = NULL;
-
-    if (result == GNOME_KEYRING_RESULT_OK && list)
-      {
-	GnomeKeyringNetworkPasswordData *password_data = list->data;
-	password = password_data->password;
-      }
+    }
 
     GDK_THREADS_ENTER();
 

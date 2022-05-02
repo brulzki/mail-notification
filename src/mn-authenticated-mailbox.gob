@@ -1,6 +1,7 @@
 /*
  * Mail Notification
  * Copyright (C) 2003-2008 Jean-Yves Lefort <jylefort@brutele.be>
+ *               2022      Bruce Schultz <brulzki@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +19,10 @@
  */
 
 %headertop{
-#include <gnome-keyring.h>
+#include <libsecret/secret.h>
 #include "mn-mailbox.h"
+
+typedef void (*MNGetPasswordCallback) (const gchar *password, const GError *error, gpointer data);
 %}
 
 %privateheader{
@@ -36,7 +39,12 @@
 #include "mn-mailbox-private.h"
 #include "mn-shell.h"
 #include "mn-util.h"
-#include "mn-keyring.h"
+
+typedef struct
+{
+  MNGetPasswordCallback callback;
+  gpointer              data;
+} GetPasswordData;
 %}
 
 class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
@@ -68,12 +76,13 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
   protected char *keyring_authtype destroywith g_free;
   protected int keyring_port;
 
-  private gpointer get_password_request;
-  private gpointer set_password_request;
+  private bool _setting_password = {FALSE};
+  private GCancellable *cancellable = {g_cancellable_new ()}
+    destroywith g_object_unref;
 
   property BOOLEAN setting_password (export)
     get {
-      g_value_set_boolean(VAL, selfp->set_password_request != NULL);
+      g_value_set_boolean(VAL, selfp->_setting_password);
     };
 
   private gboolean checking;
@@ -85,8 +94,7 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
   protected gboolean auth_cancelled; /* user pressed Cancel or mailbox removed */
   protected gboolean auth_failed;
 
-  private char *prompted_password_keyring destroywith g_free;
-  private guint32 prompted_password_item_id;
+  private gboolean prompted_password_saved = {FALSE};
 
   class_init (class)
   {
@@ -141,11 +149,8 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
     if (selfp->auth_dialog)
       gtk_dialog_response(GTK_DIALOG(selfp->auth_dialog), GTK_RESPONSE_CANCEL);
 
-    if (selfp->get_password_request)
-      gnome_keyring_cancel_request(selfp->get_password_request);
-
-    if (selfp->set_password_request)
-      gnome_keyring_cancel_request(selfp->set_password_request);
+    // cancel any pending password requests
+    g_cancellable_cancel(selfp->cancellable);
 
     /*
      * We do not remove the password from the keyring, since it is
@@ -157,34 +162,38 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
     set_password (self)
   {
     g_assert(self->password != NULL);
-    g_assert(selfp->set_password_request == NULL);
+    // should not be trying to set the password while another request
+    // is already in progress
+    g_assert(!self->_setting_password);
 
-    g_object_ref(self);
-    self_set_set_password_request(self,
-				  gnome_keyring_set_network_password(NULL,
-								     self->keyring_username,
-								     self->keyring_domain,
-								     self->keyring_server,
-								     NULL,
-								     self->keyring_protocol,
-								     self->keyring_authtype,
-								     self->keyring_port,
-								     self->password,
-								     self_set_password_cb,
-								     self,
-								     g_object_unref));
+    GHashTable *attributes = self_get_keyring_attributes(self);
+    gchar *label = self_get_keyring_label(self);
+
+    selfp->_setting_password = TRUE;
+    secret_password_storev(SECRET_SCHEMA_COMPAT_NETWORK,
+                           attributes,
+			   SECRET_COLLECTION_DEFAULT,
+			   label,
+			   self->password,
+			   selfp->cancellable,
+                           self_set_password_cb,
+			   self);
+
+    g_free(label);
+    g_hash_table_unref(attributes);
   }
 
   private void
-    set_password_cb (GnomeKeyringResult result,
-		     guint32 item_id,
-		     gpointer data)
+    set_password_cb (GObject *source,
+                     GAsyncResult *result,
+                     gpointer data)
   {
     Self *self = data;
+    GError *error = NULL;
+    secret_password_store_finish (result, &error);
+    selfp->_setting_password = FALSE;
 
     GDK_THREADS_ENTER();
-
-    self_set_set_password_request(self, NULL);
 
     /*
      * If the mailbox has not been removed, display an error dialog if
@@ -192,20 +201,22 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
      */
     if (mn_mailbox_get_active(MN_MAILBOX(self)))
       {
-	self_handle_set_password_result(self, result);
+        if (error != NULL) {
+          mn_show_error_dialog(NULL,
+			       _("Unable to save the mailbox password"),
+			       /* translators: the first %s is the mailbox format (eg: IMAP) and the second %s is the mailbox name (eg: john@imapserver.org) */
+			       _("The password of %s mailbox %s could not be saved to the keyring."),
+			       MN_MAILBOX(self)->format,
+			       MN_MAILBOX(self)->runtime_name);
+        }
 
 	mn_mailbox_enable_checking(MN_MAILBOX(self));
       }
 
     /* do not call gdk_flush(), we're normally in the main thread */
     GDK_THREADS_LEAVE();
-  }
 
-  private void
-    set_set_password_request (self, gpointer request)
-  {
-    selfp->set_password_request = request;
-    g_object_notify(G_OBJECT(self), "setting-password");
+    g_error_free (error);
   }
 
   override (MN:Mailbox) void
@@ -246,10 +257,7 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
     self->auth_cancelled = FALSE;
     self->auth_failed = FALSE;
 
-    g_free(selfp->prompted_password_keyring);
-    selfp->prompted_password_keyring = NULL;
-
-    selfp->prompted_password_item_id = 0;
+    selfp->prompted_password_saved = FALSE;
   }
 
   protected void
@@ -302,6 +310,7 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
 	GDK_THREADS_ENTER();
 
 	self->auth_prompted = TRUE;
+        selfp->prompted_password_saved = FALSE;
 
 	if (! self_prompt_for_password(self,
 				       &self->runtime_password,
@@ -311,8 +320,12 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
 				       /* translators: the first %s is the mailbox format (eg: IMAP) and the second %s is the mailbox name (eg: john@imapserver.org) */
 				       : _("Enter your password for %s mailbox %s."),
 				       MN_MAILBOX(self)->format,
-				       MN_MAILBOX(self)->runtime_name))
+				       MN_MAILBOX(self)->runtime_name)) {
 	  self->auth_cancelled = TRUE;
+        }
+        else {
+          selfp->prompted_password_saved = TRUE;
+        }
 
 	gdk_flush();
 	GDK_THREADS_LEAVE();
@@ -321,25 +334,48 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
     return ! self->auth_cancelled;
   }
 
+  private GHashTable *
+    get_keyring_attributes (self)
+  {
+    // secret_password_lookup_sync does not handle null values in the
+    // attributes, so build a list dynamically, excluding null values
+    GHashTable *attributes;
+    attributes = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+    g_hash_table_insert (attributes, "user", g_strdup(self->keyring_username));
+    if (self->keyring_domain) {
+      g_hash_table_insert (attributes, "domain", g_strdup(self->keyring_domain));
+    }
+    g_hash_table_insert (attributes, "server", g_strdup(self->keyring_server));
+    g_hash_table_insert (attributes, "protocol", g_strdup(self->keyring_protocol));
+    if (self->keyring_authtype) {
+      g_hash_table_insert (attributes, "authtype", g_strdup(self->keyring_authtype));
+    }
+    g_hash_table_insert (attributes, "port", g_strdup_printf ("%d", self->keyring_port));
+
+    return attributes;
+  }
+
+  private gchar *
+    get_keyring_label (self)
+  {
+    // user@server:port
+    return g_strdup_printf("%s@%s:%d", self->keyring_username, self->keyring_server,
+                           self->keyring_port);
+  }
+
   private char *
     get_password_sync (self)
   {
-    return mn_keyring_get_password_sync(self->keyring_username,
-					self->keyring_domain,
-					self->keyring_server,
-					self->keyring_protocol,
-					self->keyring_authtype,
-					self->keyring_port,
-					self_get_password_sync_request_cb,
-					self);
-  }
+    GHashTable *attributes = self_get_keyring_attributes(self);
+    gchar *password = NULL;
 
-  private void
-    get_password_sync_request_cb (gpointer request, gpointer data)
-  {
-    Self *self = data;
+    password = secret_password_lookupv_sync (SECRET_SCHEMA_COMPAT_NETWORK,
+                          attributes,
+			  selfp->cancellable,
+			  NULL); // &error,
 
-    selfp->get_password_request = request;
+    g_hash_table_unref(attributes);
+    return password;
   }
 
   protected void
@@ -350,16 +386,10 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
      * must remove it from the keyring since the authentication has
      * failed.
      */
-    if (self->auth_prompted && selfp->prompted_password_item_id)
+    if (self->auth_prompted && selfp->prompted_password_saved)
       {
-	self_delete_password(self,
-			     selfp->prompted_password_keyring,
-			     selfp->prompted_password_item_id);
-
-	g_free(selfp->prompted_password_keyring);
-	selfp->prompted_password_keyring = NULL;
-
-	selfp->prompted_password_item_id = 0;
+	self_delete_password(self);
+        selfp->prompted_password_saved = FALSE;
       }
 
     self->auth_failed = TRUE;
@@ -408,9 +438,9 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
 
 	remember = gnome_password_dialog_get_remember(GNOME_PASSWORD_DIALOG(selfp->auth_dialog));
 	if (remember == GNOME_PASSWORD_DIALOG_REMEMBER_SESSION)
-	  self_set_prompted_password(self, "session", *password);
+	  self_set_prompted_password(self, SECRET_COLLECTION_SESSION, *password);
 	else if (remember == GNOME_PASSWORD_DIALOG_REMEMBER_FOREVER)
-	  self_set_prompted_password(self, NULL, *password);
+	  self_set_prompted_password(self, SECRET_COLLECTION_DEFAULT, *password);
       }
 
     gtk_widget_destroy(selfp->auth_dialog);
@@ -421,98 +451,88 @@ class MN:Authenticated:Mailbox from MN:Mailbox (abstract)
 
   private void
     set_prompted_password (self,
-			   const char *keyring,
+			   const char *collection,
 			   const char *password (check null))
   {
-    GnomeKeyringResult result;
+    gboolean result;
+    GHashTable *attributes = self_get_keyring_attributes(self);
+    gchar *label = self_get_keyring_label(self);
 
     /* do not block the main loop */
     gdk_flush();
     GDK_THREADS_LEAVE();
 
-    g_free(selfp->prompted_password_keyring);
-    selfp->prompted_password_keyring = g_strdup(keyring);
-
-    result = mn_keyring_set_password_sync(keyring,
-					  self->keyring_username,
-					  self->keyring_domain,
-					  self->keyring_server,
-					  self->keyring_protocol,
-					  self->keyring_authtype,
-					  self->keyring_port,
-					  password,
-					  &selfp->prompted_password_item_id,
-					  self_set_prompted_password_request_cb,
-					  self);
+    selfp->_setting_password = FALSE;
+    result = secret_password_storev_sync(SECRET_SCHEMA_COMPAT_NETWORK,
+                                         attributes,
+                                         collection,
+                                         label,
+                                         password,
+                                         selfp->cancellable,
+                                         NULL);
+    selfp->_setting_password = TRUE;
 
     GDK_THREADS_ENTER();
 
-    self_handle_set_password_result(self, result);
-  }
-
-  private void
-    set_prompted_password_request_cb (gpointer request, gpointer data)
-  {
-    Self *self = data;
-
-    GDK_THREADS_ENTER();
-
-    self_set_set_password_request(self, request);
-
-    /* do not call gdk_flush(), we're normally in the main thread */
-    GDK_THREADS_LEAVE();
-  }
-
-  private void
-    handle_set_password_result (self, GnomeKeyringResult result)
-  {
-    if (result != GNOME_KEYRING_RESULT_OK && result != GNOME_KEYRING_RESULT_CANCELLED)
+    if (!result) {
       mn_show_error_dialog(NULL,
 			   _("Unable to save the mailbox password"),
 			   /* translators: the first %s is the mailbox format (eg: IMAP) and the second %s is the mailbox name (eg: john@imapserver.org) */
 			   _("The password of %s mailbox %s could not be saved to the keyring."),
 			   MN_MAILBOX(self)->format,
 			   MN_MAILBOX(self)->runtime_name);
+    }
+
+    g_free(label);
+    g_hash_table_unref(attributes);
   }
 
-  public gpointer
+  public void
     get_password (self,
-		  GnomeKeyringOperationGetListCallback cb,
+		  MNGetPasswordCallback callback,
+                  GCancellable *cancellable,
 		  gpointer data)
   {
-    return gnome_keyring_find_network_password(self->keyring_username,
-					       self->keyring_domain,
-					       self->keyring_server,
-					       NULL,
-					       self->keyring_protocol,
-					       self->keyring_authtype,
-					       self->keyring_port,
-					       cb,
-					       data,
-					       NULL);
+    GHashTable *attributes = self_get_keyring_attributes(self);
+
+    GetPasswordData *_data = malloc(sizeof(GetPasswordData));
+    _data->callback = callback;
+    _data->data = data;
+
+    secret_password_lookupv (SECRET_SCHEMA_COMPAT_NETWORK,
+                          attributes,
+			  cancellable,
+                          self_get_password_cb,
+                          _data);
+    g_hash_table_unref(attributes);
   }
 
   private void
-    delete_password (self,
-		     const char *keyring,
-		     guint32 item_id (check != 0))
+    get_password_cb (GObject *source,
+                     GAsyncResult *result,
+                     gpointer data)
   {
-    char *default_keyring = NULL;
+    GetPasswordData *_data = data;
+    GError *error = NULL;
+    gchar *password = secret_password_lookup_finish (result, &error);
+    _data->callback(password, error, _data->data);
 
-    if (! keyring)
-      {
-	/*
-	 * gnome_keyring_item_delete_sync() does not work if the
-	 * passed keyring is NULL, so we must get the default keyring.
-	 */
-	if (gnome_keyring_get_default_keyring_sync(&default_keyring) != GNOME_KEYRING_RESULT_OK)
-	  return;
+    g_error_free (error);
+    secret_password_free (password);
+    free(_data);
+  }
 
-	keyring = default_keyring;
-      }
+  private void
+    delete_password (self)
+  {
+    gboolean result;
+    GHashTable *attributes = self_get_keyring_attributes(self);
 
-    gnome_keyring_item_delete_sync(keyring, item_id);
+    result = secret_password_clearv_sync(SECRET_SCHEMA_COMPAT_NETWORK,
+                                         attributes,
+                                         selfp->cancellable,
+                                         NULL);
 
-    g_free(default_keyring);
+    g_hash_table_unref(attributes);
   }
 }
